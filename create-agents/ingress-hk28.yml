@@ -1,0 +1,78 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lobby-hk28-${domain_}
+  namespace: prod
+  labels: 
+    tgs.info: ${domain}-${invite_code}
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+        proxy_set_header Brand-Token eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSEsyOCIsInN1YiI6IjU1ZWUzZWNlLTI4MTgtNDBlOS1hZGQ5LTA5NWFhYmQ3MjFjZCIsIm5iZiI6MTYzNzYzNjY2MSwiZXhwIjoxNjM3NjQwMjYxLCJpYXQiOjE2Mzc2MzY2NjEsImlzcyI6InRncyJ9.uofbRVJNSMHiY7HwJHRNkVOM-XEzoYx4oClyqhlplPSwDliP-rxdAyyTatGM6u8JWsz1aqOVRCJVOuhJg8TNNgR60BQuIeTMjp91yIWghtl_P4KEqmtVkBa7t3uqQPa76xxI1lRh9uPnrG5K7m0cPtH19RrHIXAkTl_lWr2csrJnEWxYuzYuje6eKcr0z4g4z9Q2ximGslIgoB9xPJm_vKtqUkL0dks_1WL9AFV64uF21GVsIOdCyOpX500N-KWkN2v9PrefRR5wTBD1E1OAH4H4JpgM8kJbaHTdobapa5pOPguVz1_pxajPbK8L6xrMowUOL2UySBhF2B0Nx6nhgw;
+        proxy_set_header Agent-Invitation-Code ${invite_code};
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: ${domain}
+    http:
+      paths:
+      - pathType: Prefix
+        path: /api/brandcommunication
+        backend:
+          service:
+            name: brand-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /api/brandlivechat
+        backend:
+          service:
+            name: brand-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /api
+        backend:
+          service:
+            name: operator-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: lobby-hk28
+            port:
+              number: 80
+  - host: www.${domain}
+    http:
+      paths:
+      - pathType: Prefix
+        path: /api/brandcommunication
+        backend:
+          service:
+            name: brand-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /api/brandlivechat
+        backend:
+          service:
+            name: brand-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /api
+        backend:
+          service:
+            name: operator-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: lobby-hk28
+            port:
+              number: 80

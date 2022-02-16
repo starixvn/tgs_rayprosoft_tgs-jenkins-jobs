@@ -1,0 +1,84 @@
+def deployedComponents = ""
+
+pipeline {
+    agent any
+	
+	environment {
+		TAG = sh(script: "echo `date +%Y-%m-%d-%H-%M`", returnStdout: true).trim()
+		Registry = "registry.gitlab.com/rayprosoft/turnkey-gaming-system/"
+		gitlab_user_pwd = credentials('gitlab-user-pwd')
+	}
+    stages {
+        
+        stage('Clear') {
+			steps {
+				cleanWs()
+			}
+		}
+		
+        stage('Clone') {
+			steps {
+				git branch: "release", url: 'https://gitlab.com/rayprosoft/turnkey-gaming-system.git' , credentialsId: 'gitlab-user-pwd'
+			}
+		}
+		
+		stage('Building image') {
+			steps {
+				print 'Components:' + params['Components']
+				
+				script {
+					def arr = params['Components'].split(",") 
+					print 'arr.length : ' + arr.length
+					
+					withKubeConfig([credentialsId: 'k8s-kube-config', serverUrl: 'https://3CD7C11793811D1AB1605FFB918728EA.sk1.ap-east-1.eks.amazonaws.com']) {
+					    for (i = 0;i < arr.length; i++) {
+						    println arr[i]
+						    deployedComponents += "\n" + arr[i] 
+
+							sh "kubectl -n staging set image deployment/${arr[i]} ${arr[i]}=${Registry}${arr[i]}:stag-${Version} --record"
+							sh "kubectl -n staging patch deployment ${arr[i]} --patch '{\"spec\": {\"template\": {\"metadata\": {\"annotations\": {\"version/config\": \"${TAG}\" }}}}}'"
+						}
+					}					
+				}
+			}
+        }
+	}
+	
+	 post {
+        success {
+             sendTelegram("Pipeline: ${currentBuild.fullDisplayName} OK!\nDeployed Components: ${deployedComponents} \n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+        failure {
+            sendTelegram("<b>Failed Pipeline:</b> ${currentBuild.fullDisplayName} \n Deploy Components: ${deployedComponents} \n Something is wrong with ${env.BUILD_URL}/console\n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+    }
+}
+
+def sendTelegram(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'GET',
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage?text=${encodedMessage}&chat_id=${CHAT_ID}",
+                validResponseCodes: '200')
+        return response
+    }
+}
+
+def sendTelegramHTML(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'POST',
+                requestBody: "parse_mode=HTML&text=${encodedMessage}&chat_id=${CHAT_ID}",
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage",
+                validResponseCodes: '200')
+        return response
+    }
+}

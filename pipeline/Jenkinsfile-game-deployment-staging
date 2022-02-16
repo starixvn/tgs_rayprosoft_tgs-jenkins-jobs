@@ -1,0 +1,162 @@
+def message = ""
+
+pipeline {
+    agent any
+	
+	environment {
+		TAG = sh(script: "echo `date +%Y.%m.%d.%H%M`", returnStdout: true).trim()
+		Registry = "registry.gitlab.com/rayprosoft/turnkey-gaming-system/"
+		gitlab_user_pwd = credentials('gitlab-user-pwd')
+	    branch = "release"
+	}
+    stages {
+        stage('Clear') {
+			steps {
+				cleanWs()
+			}
+		}
+		
+		stage('Prepare Env') {
+            steps {
+                 configFileProvider([
+					configFile(
+						fileId: 'tgs.' + params['TgsEnv'] , 
+						variable: 'tgsconfig')]) {
+					script {
+						def envItems = readProperties file: "$tgsconfig";
+
+                        envItems.each { key, value -> 
+                            env."tgs_${key}" = value;
+                        }
+                        
+                        if (params['TgsEnv']=="prod"){
+                            branch = "master"
+                        }
+                        
+                        TAG = TAG + "-${params['TgsEnv']}"
+                        sh "TAG=${TAG}"
+					}
+				}
+            }
+        }
+        stage('Clone Tgs') {
+			steps {
+			    dir('tgs') { 
+				    git branch: "${branch}", url: 'https://gitlab.com/rayprosoft/turnkey-gaming-system.git' , credentialsId: 'gitlab-user-pwd'
+			    }
+			}
+		}
+
+		stage('Building image') {
+			steps {
+				script {
+				    dir('tgs') { 
+        				sh "sudo docker build -f src/Apis/TgsApi/Dockerfile -t ${Registry}tgs-api:${TAG} --secret id=nuget,src=\"/var/lib/jenkins/.nuget/NuGet/NuGet.Config\" ."
+        				sh "sudo docker build -f src/Apis/TgsApi/Dockerfile -t ${Registry}tgs-api:${params['TgsEnv']} --secret id=nuget,src=\"/var/lib/jenkins/.nuget/NuGet/NuGet.Config\" ."
+        				sh "sudo docker push ${Registry}tgs-api:${TAG}"
+        				sh "sudo docker push ${Registry}tgs-api:${params['TgsEnv']}"
+				    }
+				}
+			}
+        }
+        
+        stage('Clone Deployment') {
+			steps {
+			    dir('deployment') { 
+				    git branch: "master", url: 'https://gitlab.com/rayprosoft/deployment.git' , credentialsId: 'gitlab-user-pwd'
+			    }
+			}
+		}
+        
+        
+    	stage('Deployment') {
+			steps {
+				script {
+					def arr = params['Components'].split(",") 
+					print 'arr.length : ' + arr.length
+					
+				    dir('deployment') { 
+				        withKubeConfig([credentialsId: 'stag-k8s-config']) {
+    					    for (i = 0;i < arr.length; i++) {
+    						    println arr[i]
+    						    def gpCode = arr[i].split("-")[1].toUpperCase()
+    						    message += "\n${arr[i]}"
+                                
+                                sh "bash /var/lib/jenkins/create_dns_record-${params['TgsEnv']}.sh ${arr[i]}"
+                                
+                                sh """
+                                     helm template game-deployment-staging \
+                                        --set nameOverride=${arr[i]} \
+                                        --set fullnameOverride=${arr[i]} \
+                                        --set gpName=${arr[i]}  \
+                                        --set gpCode=${gpCode}  \
+                                        --set enabled=true  \
+                                        --set image.tag=${TAG} \
+                                        --set namespace=${params['TgsEnv']} \
+                                        --set connectionStrings.tgs=\"$tgs_tgs\" \
+                                        --set connectionStrings.nats=$tgs_nats \
+                                        --set connectionStrings.redis="$tgs_redis" \
+                                        --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment"
+                                """
+                                
+                                sh """
+                                    helm template game-deployment-${params['TgsEnv']} \
+                                        --set nameOverride=${arr[i]} \
+                                        --set fullnameOverride=${arr[i]} \
+                                        --set gpName=${arr[i]}  \
+                                        --set gpCode=${gpCode}  \
+                                        --set enabled=true  \
+                                        --set image.tag=${TAG} \
+                                        --set namespace=${params['TgsEnv']} \
+                                        --set connectionStrings.tgs=\"$tgs_tgs\" \
+                                        --set connectionStrings.nats=\"$tgs_nats\" \
+                                        --set connectionStrings.redis="$tgs_redis" \
+                                        --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment" \
+                                        | kubectl -n ${params['TgsEnv']}  apply -f - 
+        					    """
+					        }
+                        }
+					}					
+				}
+			}
+        }
+	}
+	
+	 post {
+        success {
+             sendTelegram("Pipeline: ${currentBuild.fullDisplayName} OK!\nDeployed Components: ${message} \n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+        failure {
+            sendTelegram("<b>Failed Pipeline:</b> ${currentBuild.fullDisplayName} \n Deploy Components: ${message} \n Something is wrong with ${env.BUILD_URL}/console\n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+    }
+}
+
+def sendTelegram(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'GET',
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage?text=${encodedMessage}&chat_id=${CHAT_ID}",
+                validResponseCodes: '200')
+        return response
+    }
+}
+
+def sendTelegramHTML(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'POST',
+                requestBody: "parse_mode=HTML&text=${encodedMessage}&chat_id=${CHAT_ID}",
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage",
+                validResponseCodes: '200')
+        return response
+    }
+}

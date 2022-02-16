@@ -1,0 +1,93 @@
+def deployedComponents = ""
+
+pipeline {
+    agent any
+	
+	environment {
+		Registry = "registry.gitlab.com/rayprosoft/turnkey-gaming-system/"
+		gitlab_user_pwd = credentials('gitlab-user-pwd')
+		branch = "release"
+	}
+    stages {
+        
+        stage('Clear') {
+			steps {
+				cleanWs()
+				print 'Components:' + params['Components']
+				print 'Env:' + params['TgsEnv']
+				print 'Version:' + params['Version']
+				script {
+    				if (params['TgsEnv']=="prod") {
+    				    branch = "master"
+    				}
+    				echo "Branch:${branch}"
+				}
+			}
+		}
+		
+        stage('Clone') {
+			steps {
+				git branch:"${branch}" , url: 'https://gitlab.com/rayprosoft/turnkey-gaming-system.git' , credentialsId: 'gitlab-user-pwd'
+			}
+		}
+		
+		stage('Building image') {
+			steps {
+				script {
+					def arr = params['Components'].split(",") 
+					print 'arr.length : ' + arr.length
+					for (i = 0;i < arr.length; i++) {
+						println arr[i]
+						def data = arr[i].split("::")
+						
+						deployedComponents += "\n${data[1]}"
+						
+						sh "sudo docker build -f ${data[0]}/Dockerfile -t ${Registry}${data[1]}:${params['TgsEnv']}-${params['Version']} --secret id=nuget,src=\"/var/lib/jenkins/.nuget/NuGet/NuGet.Config\" ."
+						sh "sudo docker build -f ${data[0]}/Dockerfile -t ${Registry}${data[1]}:${params['TgsEnv']} --secret id=nuget,src=\"/var/lib/jenkins/.nuget/NuGet/NuGet.Config\" ."
+						
+						sh "sudo docker push ${Registry}${data[1]}:${params['TgsEnv']}-${params['Version']}"
+						sh "sudo docker push ${Registry}${data[1]}:${params['TgsEnv']}"
+					}					
+				}
+			}
+        }
+	}
+	
+	 post {
+        success {
+             sendTelegram("Pipeline: ${currentBuild.fullDisplayName} OK!\nDeployed Components: ${deployedComponents} \n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+        failure {
+            sendTelegram("<b>Failed Pipeline:</b> ${currentBuild.fullDisplayName} \n Deploy Components: ${deployedComponents} \n Something is wrong with ${env.BUILD_URL}/console\n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+    }
+}
+
+def sendTelegram(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'GET',
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage?text=${encodedMessage}&chat_id=${CHAT_ID}",
+                validResponseCodes: '200')
+        return response
+    }
+}
+
+def sendTelegramHTML(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'POST',
+                requestBody: "parse_mode=HTML&text=${encodedMessage}&chat_id=${CHAT_ID}",
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage",
+                validResponseCodes: '200')
+        return response
+    }
+}

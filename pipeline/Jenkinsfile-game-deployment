@@ -1,0 +1,117 @@
+def message = ""
+
+pipeline {
+    agent any
+	
+	environment {
+		TAG = sh(script: "echo `date +%Y-%m%d-%H%M`", returnStdout: true).trim()
+		Registry = "registry.gitlab.com/rayprosoft/turnkey-gaming-system/"
+		gitlab_user_pwd = credentials('gitlab-user-pwd')
+	    branch = "develop"
+	}
+    stages {
+        stage('Clear') {
+			steps {
+				cleanWs()
+			}
+		}
+		
+		stage('Prepare Env') {
+            steps {
+                script {
+                    switch(params['TgsEnv'])
+                    {
+                        case 'prod':
+                            env.k8s_config = 'stag-k8s-config';
+                            branch = "master"
+                            break;
+                        case 'staging':
+                            env.k8s_config = 'stag-k8s-config';
+                            branch = "release"
+                            break;
+                        default:
+                            env.k8s_config = 'k8s-kube-config'
+                            branch = "develop"
+                            break;
+                    }
+					TAG = "${params['TgsEnv']}-" + TAG
+                    message += "\nBranch: ${branch}" 
+                    message += "\nTag: ${TAG}"
+                    message += "\nEnv: ${params['TgsEnv']}"
+                }
+            }
+        }
+        stage('Clone') {
+			steps {
+				git branch: "${branch}", url: 'https://gitlab.com/rayprosoft/turnkey-gaming-system.git' , credentialsId: 'gitlab-user-pwd'
+			}
+		}
+
+		stage('Building image') {
+			steps {
+				script {
+    				sh "sudo docker build -f src/Apis/TgsApi/Dockerfile -t ${Registry}tgs-api:${TAG} --secret id=nuget,src=\"/var/lib/jenkins/.nuget/NuGet/NuGet.Config\" ."
+    				sh "sudo docker build -f src/Apis/TgsApi/Dockerfile -t ${Registry}tgs-api:${params['TgsEnv']} --secret id=nuget,src=\"/var/lib/jenkins/.nuget/NuGet/NuGet.Config\" ."
+    				sh "sudo docker push ${Registry}tgs-api:${TAG}"
+    				sh "sudo docker push ${Registry}tgs-api:${params['TgsEnv']}"
+				}
+			}
+        }
+        
+    	stage('Deployment') {
+			steps {
+				script {
+					def arr = params['Components'].split(",") 
+					print 'arr.length : ' + arr.length
+					
+				    withKubeConfig([credentialsId: env.k8s_config]) {
+				        
+					    for (i = 0;i < arr.length; i++) {
+						    println arr[i]
+						    message += "\n${arr[i]}"
+                            sh "kubectl set image deployment/${arr[i]} ${arr[i]}=${Registry}tgs-api:${TAG} --record -n ${params['TgsEnv']}"
+                        }
+					}					
+				}
+			}
+        }
+	}
+	
+	 post {
+        success {
+             sendTelegram("Pipeline: ${currentBuild.fullDisplayName} OK!\nDeployed Components: ${message} \n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+        failure {
+            sendTelegram("<b>Failed Pipeline:</b> ${currentBuild.fullDisplayName} \n Deploy Components: ${message} \n Something is wrong with ${env.BUILD_URL}/console\n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+    }
+}
+
+def sendTelegram(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'GET',
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage?text=${encodedMessage}&chat_id=${CHAT_ID}",
+                validResponseCodes: '200')
+        return response
+    }
+}
+
+def sendTelegramHTML(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'POST',
+                requestBody: "parse_mode=HTML&text=${encodedMessage}&chat_id=${CHAT_ID}",
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage",
+                validResponseCodes: '200')
+        return response
+    }
+}

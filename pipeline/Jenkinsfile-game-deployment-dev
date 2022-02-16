@@ -1,0 +1,177 @@
+def message = ""
+
+pipeline {
+    agent any
+	
+	environment {
+		TAG = sh(script: "echo dev-`date +%Y-%m%d-%H%M`", returnStdout: true).trim()
+		ImageTagUrl = "https://gitlab.com/api/v4/projects/20478010/registry/repositories/2268339/tags"
+		Registry = "registry.gitlab.com/rayprosoft/turnkey-gaming-system/"
+		gitlab_user_pwd = credentials('gitlab-user-pwd')
+	}
+    stages {
+        stage('Clear') {
+			steps {
+				cleanWs()
+			}
+		}
+		
+		stage('Prepare Env') {
+            steps {
+                script {
+                    sh "Components=${params['Components']}"
+                }
+                
+                configFileProvider([
+                    configFile(fileId: 'tgs.dev', variable: 'tgsconfig')]) {
+                        script {
+                            def envItems = readProperties file: "$tgsconfig";
+                            envItems.each { key, value -> env."tgs_${key}" = value; }
+                            
+                        env.kube_ns = "dev"    
+                        message += "\nBranch: ${env.GIT_BRANCH}" 
+                        message += "\nTag: ${env.TAG}"
+                        message += "\nEnv: ${env.kube_ns}"
+                    }
+                }
+            }
+        }
+        stage('Clone Tgs') {
+			steps {
+			    dir('tgs') { 
+				    git branch: "develop", url: 'https://gitlab.com/rayprosoft/turnkey-gaming-system.git' , credentialsId: 'gitlab-user-pwd'
+			    }
+			}
+		}
+
+		stage('Building image') {
+			steps {
+				script {
+				    dir('tgs') { 
+        				sh "sudo docker build -f src/Apis/TgsApi/Dockerfile -t ${Registry}tgs-api:${TAG} --secret id=nuget,src=\"/var/lib/jenkins/.nuget/NuGet/NuGet.Config\" ."
+        				sh "sudo docker build -f src/Apis/TgsApi/Dockerfile -t ${Registry}tgs-api:${env.kube_ns} --secret id=nuget,src=\"/var/lib/jenkins/.nuget/NuGet/NuGet.Config\" ."
+        				sh "sudo docker push ${Registry}tgs-api:${TAG}"
+        				sh "sudo docker push ${Registry}tgs-api:${env.kube_ns}"
+				    }
+				}
+			}
+        }
+        
+        stage('Clone Deployment') {
+			steps {
+			    dir('deployment') { 
+				    git branch: "master", url: 'https://gitlab.com/rayprosoft/deployment.git' , credentialsId: 'gitlab-user-pwd'
+			    }
+			}
+		}
+        
+    	stage('Deployment') {
+			steps {
+				script {
+					def arr = params['Components'].split(",") 
+					print 'arr.length : ' + arr.length
+					
+					dir('deployment') { 
+				        withKubeConfig([credentialsId: 'k8s-kube-config']) {
+    					    for (i = 0;i < arr.length; i++) {
+    						    println arr[i]
+    						    def gpCode = arr[i].split("-")[1].toUpperCase()
+    						    message += "\n${arr[i]}"
+    						    
+                                //configFileProvider([configFile(fileId: 'staging-game-sbo-whitelist', targetLocation: "game-whitelist.txt", variable: 'whitelist')]) {
+                                //    script {
+                                //        testConfig = readFile encoding: 'UTF-8', file: "game-whitelist.txt"
+                                //        echo "tgsconfig2=${testConfig}"
+                                //    }
+                                //}
+                                
+                                sh "bash /var/lib/jenkins/create_dns_record-dev.sh ${arr[i]}"
+                                
+                                println 'TgsOperation=' + params['TgsOperation']
+                                def operation = (params['TgsOperation']=="delete_ingress") ? "delete" : "apply"
+                                def enabled = (params['TgsOperation']=="delete_ingress") ? "false" : "true"
+                                  
+                                sh """
+                                     helm template game-deployment-dev \
+                                        --set nameOverride=${arr[i]} \
+                                        --set fullnameOverride=${arr[i]} \
+                                        --set gpName=${arr[i]}  \
+                                        --set gpCode=${gpCode}  \
+                                        --set enabled=${enabled}  \
+                                        --set image.tag=${TAG} \
+                                        --set namespace=${kube_ns} \
+                                        --set connectionStrings.tgs=\"$tgs_tgs\" \
+                                        --set connectionStrings.nats=$tgs_nats \
+                                        --set connectionStrings.redis="$tgs_redis" \
+                                        --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment"
+                                """
+                                
+                                sh """
+                                    helm template game-deployment-dev \
+                                        --set nameOverride=${arr[i]} \
+                                        --set fullnameOverride=${arr[i]} \
+                                        --set gpName=${arr[i]}  \
+                                        --set gpCode=${gpCode}  \
+                                        --set enabled=${enabled}  \
+                                        --set image.tag=${TAG} \
+                                        --set namespace=${kube_ns} \
+                                        --set connectionStrings.tgs=\"$tgs_tgs\" \
+                                        --set connectionStrings.nats=\"$tgs_nats\" \
+                                        --set connectionStrings.redis="$tgs_redis" \
+                                        --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment" \
+                                        | kubectl -n ${kube_ns} ${operation} -f -
+        					    """
+					        }
+                        }
+					}
+				}
+			}
+        }
+        
+        stage('Remove Image Tags') {					
+            steps {	
+                withCredentials([string(credentialsId: "GitLabToken", variable: "GitLabToken")]) {					
+                    sh "curl --request DELETE --data \'name_regex_delete=.*\' --data \'keep_n=10\' --header \'PRIVATE-TOKEN: ${GitLabToken}\' ${ImageTagUrl}"
+                }
+            }
+        }
+	}
+	
+	post {
+        success {
+             sendTelegram("Pipeline: ${currentBuild.fullDisplayName} OK!\nDeployed Components: ${message} \n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+        failure {
+            sendTelegram("<b>Failed Pipeline:</b> ${currentBuild.fullDisplayName} \n Deploy Components: ${message} \n Something is wrong with ${env.BUILD_URL}/console\n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+    }
+}
+
+def sendTelegram(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'GET',
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage?text=${encodedMessage}&chat_id=${CHAT_ID}",
+                validResponseCodes: '200')
+        return response
+    }
+}
+
+def sendTelegramHTML(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'POST',
+                requestBody: "parse_mode=HTML&text=${encodedMessage}&chat_id=${CHAT_ID}",
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage",
+                validResponseCodes: '200')
+        return response
+    }
+}

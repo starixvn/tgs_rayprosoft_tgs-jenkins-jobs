@@ -1,0 +1,44 @@
+{{- if .Values.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap-{{ .Values.gpName }}
+data:
+  appsettings.json: |
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft": "Warning",
+          "Microsoft.Hosting.Lifetime": "Information"
+        }
+      },
+      "LoggerServiceConfig": {
+        "BatchInsertWaitingSeconds": 1,
+        "BatchInsertCounts": 100,
+        "LogLevel": "ALL",
+        "UnrestrictedLoggers": []
+      },
+      "AllowedHosts": "*",
+      "Game": {
+        "CashBaseUrl": "http://cashservice-api"
+      },
+      "FeatureManagement": {
+        "{{ .Values.gpCode }}": false,
+      },
+      "ConnectionStrings": {
+        "Tgs": "{{ .Values.connectionStrings.tgs }}",
+        "RedisConfigurationString": "{{ .Values.connectionStrings.redis }}"
+      },
+      "TCGFtpApi": {
+        "Url": "http://game-tcg-ftp"
+      },
+      "NatsSetting": {
+        "Urls": "{{ .Values.connectionStrings.nats }}",
+        "ConnectTimeoutMs": 2000,
+        "PingInterval": 5000,
+        "PingMaxOutStanding": 3,
+        "SubscriptionBatchSize": 128
+      }
+    }
+{{- end }}

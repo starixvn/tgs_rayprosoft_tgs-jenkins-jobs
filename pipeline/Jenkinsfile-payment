@@ -1,0 +1,179 @@
+def deployedComponents = ""
+
+pipeline {
+    agent any
+	
+	environment {
+		Registry = "registry.gitlab.com/rayprosoft/turnkey-gaming-system/backoffice-site"
+		gitlab_user_pwd = credentials('gitlab-user-pwd')
+		BuildConfiguration="Debug"
+		ImageNamePaymentApi="registry.gitlab.com/rayprosoft/turnkey-gaming-system/payment-api"
+		ImageNamePaymentPrimePay="registry.gitlab.com/rayprosoft/turnkey-gaming-system/primepay"
+		ImageNamePaymentLeePay="registry.gitlab.com/rayprosoft/turnkey-gaming-system/leepay"
+		branch = "release"
+	}
+	stages {
+	    stage('Clear') {
+			steps {
+			    echo "TAG=staging-${Version}"
+				cleanWs()
+				script {
+    				if (params['TgsEnv']=="prod") {
+    				    branch = "main"
+    				}
+    				echo "Branch:${branch}"
+				}
+			}
+		}
+	    stage('Build Docker Images') {
+            parallel {
+                stage('payment-api') {
+                    stages {
+                        stage('clone payment-api') {
+                            when {
+                                expression {
+                                    return checkIsRunStage("payment-api", params['Components'])
+                                }
+                            }
+                            steps {
+                                dir('payment-api') { 
+                                    git branch: "${branch}", url: 'https://gitlab.com/rayprosoft/tgs-payment.git' , credentialsId: 'gitlab-user-pwd'
+                                }
+                            }
+                        }
+                        stage('build payment-api') {
+                            when {
+                                expression {
+                                    return checkIsRunStage("payment-api", params['Components'])
+                                }
+                            }
+                            steps {
+                                 dir('payment-api') {                                    
+                                    sh "sudo docker build -f PaymentService/Dockerfile -t ${ImageNamePaymentApi}:${params['TgsEnv']}-${Version} --secret id=nuget,src=\"/var/lib/jenkins/.nuget/NuGet/NuGet.Config\" ."
+                                    sh "sudo docker build -f PaymentService/Dockerfile -t ${ImageNamePaymentApi}:${params['TgsEnv']} --secret id=nuget,src=\"/var/lib/jenkins/.nuget/NuGet/NuGet.Config\" ."
+                                    sh "sudo docker push ${ImageNamePaymentApi}:${params['TgsEnv']}-${Version}"
+                                    sh "sudo docker push ${ImageNamePaymentApi}:${params['TgsEnv']}"
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                stage('payment-leepay') {
+                    stages {
+                        stage('clone payment-leepay') {
+                            when {
+                                expression {
+                                    return checkIsRunStage("leepay", params['Components'])
+                                }
+                            }
+                            steps {
+                                dir('payment-leepay') { 
+                                    git branch: "${branch}", url: 'https://gitlab.com/rayprosoft/tgs-payment-leepay.git' , credentialsId: 'gitlab-user-pwd'
+                                }
+                            }
+                        }
+                        stage('build payment-leepay') {
+                            when {
+                                expression {
+                                    return checkIsRunStage("leepay", params['Components'])
+                                }
+                            }
+                            steps {
+                                 dir('payment-leepay') {                                    
+                                    sh "sudo docker build -f Tgs.Payment.LeePay/Dockerfile -t ${ImageNamePaymentLeePay}:${params['TgsEnv']}-${Version} --secret id=nuget,src=\"/var/lib/jenkins/.nuget/NuGet/NuGet.Config\" ."
+                                    sh "sudo docker build -f Tgs.Payment.LeePay/Dockerfile -t ${ImageNamePaymentLeePay}:${params['TgsEnv']} --secret id=nuget,src=\"/var/lib/jenkins/.nuget/NuGet/NuGet.Config\" ."
+                                    sh "sudo docker push ${ImageNamePaymentLeePay}:${params['TgsEnv']}-${Version}"
+                                    sh "sudo docker push ${ImageNamePaymentLeePay}:${params['TgsEnv']}"
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                stage('payment-primepay') {
+                    stages {
+                        stage('clone payment-primepay') {
+                            when {
+                                expression {
+                                    return checkIsRunStage("primepay", params['Components'])
+                                }
+                            }
+                            steps {
+                                dir('payment-primepay') { 
+                                    git branch: "${branch}", url: 'https://gitlab.com/rayprosoft/tgs-payment-primepay.git' , credentialsId: 'gitlab-user-pwd'
+                                }
+                            }
+                        }
+                        stage('build payment-primepay') {
+                            when {
+                                expression {
+                                    return checkIsRunStage("primepay", params['Components'])
+                                }
+                            }
+                            steps {
+                                 dir('payment-primepay') {                                    
+                                    sh "sudo docker build -f Tgs.Payment.PrimePay/Dockerfile -t ${ImageNamePaymentPrimePay}:${params['TgsEnv']}-${Version} --secret id=nuget,src=\"/var/lib/jenkins/.nuget/NuGet/NuGet.Config\" ."
+                                    sh "sudo docker build -f Tgs.Payment.PrimePay/Dockerfile -t ${ImageNamePaymentPrimePay}:${params['TgsEnv']} --secret id=nuget,src=\"/var/lib/jenkins/.nuget/NuGet/NuGet.Config\" ."
+                                    sh "sudo docker push ${ImageNamePaymentPrimePay}:${params['TgsEnv']}-${Version}"
+                                    sh "sudo docker push ${ImageNamePaymentPrimePay}:${params['TgsEnv']}"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+	    }
+	}
+	
+	post {
+        success {
+             sendTelegram("Pipeline: ${currentBuild.fullDisplayName} OK!\nDeployed Components: ${deployedComponents} \n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+        failure {
+            sendTelegram("<b>Failed Pipeline:</b> ${currentBuild.fullDisplayName} \n Deploy Components: ${deployedComponents} \n Something is wrong with ${env.BUILD_URL}/console\n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+    }
+}
+
+
+def checkIsRunStage(currentName, selectedNames) {
+    def arr = selectedNames.split(",")
+    def isRun = false
+
+    if(arr.length > 0)
+        for(i = 0; i < arr.length; i++) {
+            isRun = isRun || (arr[i] == currentName)
+        }
+
+    return isRun
+}
+
+def sendTelegram(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'GET',
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage?text=${encodedMessage}&chat_id=${CHAT_ID}",
+                validResponseCodes: '200')
+        return response
+    }
+}
+
+def sendTelegramHTML(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'POST',
+                requestBody: "parse_mode=HTML&text=${encodedMessage}&chat_id=${CHAT_ID}",
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage",
+                validResponseCodes: '200')
+        return response
+    }
+}

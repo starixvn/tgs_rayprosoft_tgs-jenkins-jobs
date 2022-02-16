@@ -1,0 +1,200 @@
+def deployedComponents = ""
+
+pipeline {
+    agent any
+	
+	environment {
+		Registry = "registry.gitlab.com/rayprosoft/turnkey-gaming-system/backoffice-site"
+		gitlab_user_pwd = credentials('gitlab-user-pwd')
+	}
+	stages {
+	    stage('Clear') {
+			steps {
+			    print 'Components:' + params['Components']
+				cleanWs()
+			}
+		}
+	    stage('Build Docker Images') {
+            parallel {
+                stage('backoffice-site') {
+                    stages {
+                        stage('clone backoffice') {
+                            when {
+                                expression {
+                                    return checkIsRunStage("backoffice-site", params['Components'])
+                                }
+                            }
+                            steps {
+                                dir('backoffice') { 
+                                    git branch: "main", url: 'https://gitlab.com/rayprosoft/tgs-website-backoffice.git' , credentialsId: 'gitlab-user-pwd'
+                                }
+                            }
+                        }
+                        stage('build backoffice') {
+                            when {
+                                expression {
+                                    return checkIsRunStage("backoffice-site", params['Components'])
+                                }
+                            }
+                            steps {
+                                 dir('backoffice') {                                    
+                                    sh "sudo docker build --build-arg BuildEnv=prod_gpi -t registry.gitlab.com/rayprosoft/turnkey-gaming-system/backoffice-site:prod-${params['Version']} ."
+                                    sh "sudo docker build --build-arg BuildEnv=prod_gpi -t registry.gitlab.com/rayprosoft/turnkey-gaming-system/backoffice-site:prod ."
+                                    sh "sudo docker push registry.gitlab.com/rayprosoft/turnkey-gaming-system/backoffice-site:prod-${params['Version']}"
+                                    sh "sudo docker push registry.gitlab.com/rayprosoft/turnkey-gaming-system/backoffice-site:prod"
+									//deployedComponents += "backoffice-site:prod"
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('mocksite') {
+                    stages {
+                        stage('clone mocksite') {
+                            when {
+                                expression {
+                                    return checkIsRunStage("mocksite", params['Components'])
+                                }
+                            }
+                            steps {
+                                dir('mocksite') { 
+                                    git branch: "main", url: 'https://gitlab.com/rayprosoft/tgs-website-mocksite.git' , credentialsId: 'gitlab-user-pwd'
+                                }
+                            }
+                        }
+                        stage('build mocksite') {
+                            when {
+                                expression {
+                                    return checkIsRunStage("mocksite", params['Components'])
+                                }
+                            }
+                            steps {
+                                 dir('mocksite') {                                    
+                                    sh "sudo docker build --build-arg BuildEnv=prod_gpi -t registry.gitlab.com/rayprosoft/turnkey-gaming-system/mocksite:prod-${params['Version']} ."
+                                    sh "sudo docker build --build-arg BuildEnv=prod_gpi -t registry.gitlab.com/rayprosoft/turnkey-gaming-system/mocksite:prod ."
+                                    sh "sudo docker push registry.gitlab.com/rayprosoft/turnkey-gaming-system/mocksite:prod-${params['Version']}"
+                                    sh "sudo docker push registry.gitlab.com/rayprosoft/turnkey-gaming-system/mocksite:prod"
+									//deployedComponents += "mocksite-site:prod"
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('agent') {
+                    stages {
+                        stage('clone agent') {
+                            when {
+                                expression {
+                                    return checkIsRunStage("agent-gpi", params['Components'])
+                                }
+                            }
+                            steps {
+                                dir('agent') { 
+                                    git branch: "master", url: 'https://gitlab.com/inwoker/tgs/tgs-affiliate.git' , credentialsId: 'gitlab-user-pwd'
+                                }
+                            }
+                        }
+                        stage('build agent api') {
+                            when {
+                                expression {
+                                    return checkIsRunStage("agent-gpi", params['Components'])
+                                }
+                            }
+                            steps {
+                                 dir('agent') {                                    
+                                    sh "sudo docker build --build-arg BuildEnv=prod_gpi -t registry.gitlab.com/rayprosoft/turnkey-gaming-system/agent-gpi:prod-${params['Version']} ."
+                                    sh "sudo docker build --build-arg BuildEnv=prod_gpi -t registry.gitlab.com/rayprosoft/turnkey-gaming-system/agent-gpi:prod ."
+                                    sh "sudo docker push registry.gitlab.com/rayprosoft/turnkey-gaming-system/agent-gpi:prod-${params['Version']}"
+                                    sh "sudo docker push registry.gitlab.com/rayprosoft/turnkey-gaming-system/agent-gpi:prod"
+									//deployedComponents += "agent-gpi:prod"
+                                }
+                            }
+                        }
+						stage('build agent wlg') {
+                            when {
+                                expression {
+                                    return checkIsRunStage("agent-wlg", params['Components'])
+                                }
+                            }
+                            steps {
+                                 dir('agent') {                                    
+                                    sh "sudo docker build --build-arg BuildEnv=prod_wlg -t registry.gitlab.com/rayprosoft/turnkey-gaming-system/agent-wlg:prod-${params['Version']} ."
+                                    sh "sudo docker build --build-arg BuildEnv=prod_wlg -t registry.gitlab.com/rayprosoft/turnkey-gaming-system/agent-wlg:prod ."
+                                    sh "sudo docker push registry.gitlab.com/rayprosoft/turnkey-gaming-system/agent-wlg:prod-${params['Version']}"
+                                    sh "sudo docker push registry.gitlab.com/rayprosoft/turnkey-gaming-system/agent-wlg:prod"
+									//deployedComponents += "agent-wlg:prod"
+                                }
+                            }
+                        }
+						stage('build agent bin') {
+                            when {
+                                expression {
+                                    return checkIsRunStage("agent-bin", params['Components'])
+                                }
+                            }
+                            steps {
+                                 dir('agent') {                                    
+                                    sh "sudo docker build --build-arg BuildEnv=prod_bin -t registry.gitlab.com/rayprosoft/turnkey-gaming-system/agent-bin:prod-${params['Version']} ."
+                                    sh "sudo docker build --build-arg BuildEnv=prod_bin -t registry.gitlab.com/rayprosoft/turnkey-gaming-system/agent-bin:prod ."
+                                    sh "sudo docker push registry.gitlab.com/rayprosoft/turnkey-gaming-system/agent-bin:prod-${params['Version']}"
+                                    sh "sudo docker push registry.gitlab.com/rayprosoft/turnkey-gaming-system/agent-bin:prod"
+									//deployedComponents += "agent-bin:prod"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+	    }
+	}
+	
+	post {
+        success {
+             sendTelegram("Pipeline: ${currentBuild.fullDisplayName} OK!\nDeployed Components: ${deployedComponents} \n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+        failure {
+            sendTelegram("<b>Failed Pipeline:</b> ${currentBuild.fullDisplayName} \n Deploy Components: ${deployedComponents} \n Something is wrong with ${env.BUILD_URL}/console\n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+    }
+}
+
+def checkIsRunStage(currentName, selectedNames) {
+    def arr = selectedNames.split(",")
+    def isRun = false
+
+    if(arr.length > 0)
+        for(i = 0; i < arr.length; i++) {
+            isRun = isRun || (arr[i] == currentName)
+        }
+
+    return isRun
+}
+
+def sendTelegram(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'GET',
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage?text=${encodedMessage}&chat_id=${CHAT_ID}",
+                validResponseCodes: '200')
+        return response
+    }
+}
+
+def sendTelegramHTML(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'POST',
+                requestBody: "parse_mode=HTML&text=${encodedMessage}&chat_id=${CHAT_ID}",
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage",
+                validResponseCodes: '200')
+        return response
+    }
+}

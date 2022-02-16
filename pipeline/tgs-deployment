@@ -1,0 +1,533 @@
+def deployedComponents = ""
+
+pipeline {
+    agent any
+	
+	environment {
+		Registry = "registry.gitlab.com/rayprosoft/turnkey-gaming-system/"
+		BuildConfiguration='Debug'
+		gitlab_user_pwd = credentials('gitlab-user-pwd')
+		branch = "release"
+	}
+    stages {
+        
+         stage('Prepare') {
+            steps {
+                script {
+                    switch(params['TgsEnv'])
+                    {
+                        case 'prod':
+                            env.branch = 'master'
+                            env.k8s_config = 'stag-k8s-config';
+                            break;
+                        case 'staging':
+                            env.branch = 'release'
+                            env.k8s_config = 'stag-k8s-config';
+                            break;
+                        default:
+                            env.branch = 'develop'
+                            env.k8s_config = 'k8s-kube-config' 
+                            break;
+                    }
+                }
+
+                configFileProvider([
+					configFile(
+						fileId: 'tgs.' + params['TgsEnv'] , 
+						variable: 'tgsconfig')]) {
+					script {
+						def envItems = readProperties file: "$tgsconfig";
+
+                        envItems.each { key, value -> 
+                            env."tgs_${key}" = value;
+                        }
+                        env.kube_ns = params['TgsEnv'] ;
+                        env.TAG = sh(script: "echo `date +%Y.%m%d.%H%M`", returnStdout: true).trim() + "-" + env.kube_ns 
+					}
+				}
+
+                sh "echo tag: $TAG"
+            }
+        }
+         
+        stage('Clear') {
+			steps {
+				cleanWs()
+			}
+		}
+	
+		
+	    stage('Clone Tgs') {
+			steps {
+			    dir('tgs') { 
+				    git branch: env.branch , url: 'https://gitlab.com/rayprosoft/turnkey-gaming-system.git' , credentialsId: 'gitlab-user-pwd'
+			    }
+			}
+		}
+        
+        stage('Test') {
+			steps {
+			    dir('tgs') { 
+				    sh  "dotnet test -c $BuildConfiguration --filter Unit /p:CollectCoverage=true --logger trx --no-build"
+				    sh  "sudo dotnet restore"
+			    }
+			}
+		}
+
+        stage('Building op-api image') {
+            when {
+                expression {
+                    return checkIsRunStage("operator-api", params['Components'])
+                }
+            }
+            environment {
+                ImageName="${Registry}operator-api"
+            }
+			steps {
+			    dir('tgs') { 
+				    sh 'dotnet build "src/Apis/OperatorApi" -c $BuildConfiguration -t:ContainerBuild -p:DockerfileTag="$ImageName:${TAG}" --no-restore '
+                    sh 'docker push $ImageName:${TAG}'
+			    }
+			}
+        }
+
+        stage('Building agent-api image') {
+            when {
+                expression {
+                    return checkIsRunStage("agent-api", params['Components'])
+                }
+            }
+            environment {
+                ImageName="${Registry}agent-api"
+            }
+			steps {
+		        dir('tgs') { 
+                    sh 'dotnet build "src/Apis/AgentApi" -c $BuildConfiguration -t:ContainerBuild -p:DockerfileTag="$ImageName:${TAG}" --no-restore '
+                    sh 'docker push $ImageName:${TAG}'
+		        }
+			}
+        }
+        
+        stage('Building backoffice-api image') {
+            when {
+                expression {
+                    return checkIsRunStage("backoffice-api", params['Components'])
+                }
+            }
+            environment {
+                ImageName="${Registry}backoffice-api"
+            }
+			steps {
+			    dir('tgs') { 
+                    sh 'dotnet build "src/Apis/BackendOffice" -c $BuildConfiguration -t:ContainerBuild -p:DockerfileTag="$ImageName:${TAG}" --no-restore '
+                    sh 'docker push $ImageName:${TAG}'
+			    }
+			}
+        }
+
+        stage('Building global-api image') {
+            when {
+                expression {
+                    return checkIsRunStage("global-api", params['Components'])
+                }
+            }
+            environment {
+                ImageName="${Registry}global-api"
+            }
+			steps {
+			    dir('tgs') { 
+                    sh 'dotnet build "src/Apis/GlobalApi" -c $BuildConfiguration -t:ContainerBuild -p:DockerfileTag="$ImageName:${TAG}" --no-restore '
+                    sh 'docker push $ImageName:${TAG}'
+			    }
+			}
+        }
+
+        stage('Building report-api image') {
+            when {
+                expression {
+                    return checkIsRunStage("report-api", params['Components'])
+                }
+            }
+            environment {
+                ImageName="${Registry}report-api"
+            }
+			steps {
+			    dir('tgs') { 
+                    sh 'dotnet build "src/Apis/ReportApi" -c $BuildConfiguration -t:ContainerBuild -p:DockerfileTag="$ImageName:${TAG}" --no-restore '
+                    sh 'docker push $ImageName:${TAG}'
+			    }
+			}
+        }
+
+        stage('Building promotion-api image') {
+            when {
+                expression {
+                    return checkIsRunStage("promotion-api", params['Components'])
+                }
+            }
+            environment {
+                ImageName="${Registry}promotion-api"
+            }
+			steps {
+			    dir('tgs') { 
+                    sh 'dotnet build "src/Apis/PromotionApi" -c $BuildConfiguration -t:ContainerBuild -p:DockerfileTag="$ImageName:${TAG}" --no-restore '
+                    sh 'docker push $ImageName:${TAG}'
+			    }
+			}
+        }
+
+        stage('Building schedulers image') {
+            when {
+                expression {
+                    return checkIsRunStage("scheduler", params['Components'])
+                }
+            }
+            environment {
+                ImageName="${Registry}schedulers"
+            }
+			steps {
+			    dir('tgs') { 
+                    sh 'dotnet build "src/Workers/Schedulers" -c $BuildConfiguration -t:ContainerBuild -p:DockerfileTag="$ImageName:${TAG}" --no-restore '
+                    sh 'docker push $ImageName:${TAG}'
+			    }
+			}
+        }
+
+        stage('Deploy') {
+            when {
+                expression {
+                    return env.kube_ns == 'prod';
+                }
+            }
+
+            steps {
+                script {
+                    input message: 'Ready to go?', ok: 'yes';
+                }
+                
+                sh "echo start deploy"
+            }
+        }
+
+        stage('Clone Deployment') {
+			steps {
+			    dir('deployment') { 
+				    git branch: "master", url: 'https://gitlab.com/rayprosoft/deployment.git' , credentialsId: 'gitlab-user-pwd'
+			    }
+			}
+        }
+        
+        stage('Deploy op-api') {
+            when {
+                expression {
+                    return checkIsRunStage("operator-api", params['Components'])
+                }
+            }
+            environment {
+                ImageName="${Registry}operator-api"
+            }
+            steps {
+                withKubeConfig([credentialsId: env.k8s_config]) {
+                    sh '''
+                        helm template deployment/k8s/operator-api \
+                            --set image.tag=${TAG} \
+                            --set namespace=${kube_ns} \
+                            --set validateCodeTestEnabled=${tgs_validateCodeTestEnabled} \
+                            --set connectionStrings.tgs="$tgs_tgs" \
+                            --set connectionStrings.redis="$tgs_redis" \
+                            --set nats.urls="$tgs_nats" \
+                            --set mail.url="$tgs_mail_service" \
+                            --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment" 
+
+                        helm template deployment/k8s/operator-api \
+                            --set image.tag=${TAG} \
+                            --set namespace=${kube_ns} \
+                            --set validateCodeTestEnabled=${tgs_validateCodeTestEnabled} \
+                            --set connectionStrings.tgs="$tgs_tgs" \
+                            --set connectionStrings.redis="$tgs_redis" \
+                            --set nats.urls="$tgs_nats" \
+                            --set mail.url="$tgs_mail_service" \
+                            --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment" \
+                        | kubectl -n ${kube_ns} apply -f -
+                    '''
+                }
+			}
+        }
+
+        stage('Deploy agent-api') {
+            when {
+                expression {
+                    return checkIsRunStage("agent-api", params['Components'])
+                }
+            }
+            environment {
+                ImageName="${Registry}agent-api"
+            }
+            steps {
+                withKubeConfig([credentialsId: env.k8s_config]) {
+                    sh '''
+                        helm template deployment/k8s/agent-api \
+                            --set image.tag=${TAG} \
+                            --set namespace=${kube_ns} \
+                            --set connectionStrings.tgs="$tgs_tgs" \
+                            --set connectionStrings.redis="$tgs_redis" \
+                            --set nats.urls="$tgs_nats" \
+                            --set mail.url="$tgs_mail_service" \
+                            --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment"
+
+                        helm template deployment/k8s/agent-api \
+                            --set image.tag=${TAG} \
+                            --set namespace=${kube_ns} \
+                            --set connectionStrings.tgs="$tgs_tgs" \
+                            --set connectionStrings.redis="$tgs_redis" \
+                            --set nats.urls="$tgs_nats" \
+                            --set mail.url="$tgs_mail_service" \
+                            --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment"  \
+                        | kubectl -n ${kube_ns} apply -f -
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy backoffice-api') {
+            when {
+                expression {
+                    return checkIsRunStage("backoffice-api", params['Components'])
+                }
+            }
+            environment {
+                ImageName="${Registry}backoffice-api"
+            }
+            steps {
+                withKubeConfig([credentialsId: env.k8s_config]) {
+                    sh '''
+                        helm template deployment/k8s/backoffice-api \
+                            --set image.tag=${TAG} \
+                            --set namespace=${kube_ns} \
+                            --set connectionStrings.tgs="$tgs_tgs" \
+                            --set connectionStrings.redis="$tgs_redis" \
+                            --set nats.urls="$tgs_nats" \
+                            --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment"
+
+                        helm template deployment/k8s/backoffice-api \
+                            --set image.tag=${TAG} \
+                            --set namespace=${kube_ns} \
+                            --set connectionStrings.tgs="$tgs_tgs" \
+                            --set connectionStrings.redis="$tgs_redis" \
+                            --set nats.urls="$tgs_nats" \
+                            --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment" \
+                        | kubectl -n ${kube_ns} apply -f -
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy global-api') {
+            when {
+                expression {
+                    return checkIsRunStage("global-api", params['Components'])
+                }
+            }
+            environment {
+                ImageName="${Registry}global-api"
+            }
+            steps {
+                withKubeConfig([credentialsId: env.k8s_config]) {
+                    sh '''
+                        helm template deployment/k8s/global-api \
+                            --set image.tag=${TAG} \
+                            --set namespace=${kube_ns} \
+                            --set connectionStrings.tgs="$tgs_tgs" \
+                            --set connectionStrings.redis="$tgs_redis" \
+                            --set nats.urls="$tgs_nats" \
+                            --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment"
+
+                        helm template deployment/k8s/global-api \
+                            --set image.tag=${TAG} \
+                            --set namespace=${kube_ns} \
+                            --set connectionStrings.tgs="$tgs_tgs" \
+                            --set connectionStrings.redis="$tgs_redis" \
+                            --set nats.urls="$tgs_nats" \
+                            --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment" \
+                        | kubectl -n ${kube_ns} apply -f -
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy report-api') {
+            when {
+                expression {
+                    return checkIsRunStage("report-api", params['Components'])
+                }
+            }
+            environment {
+                ImageName="${Registry}report-api"
+            }
+            steps {
+                withKubeConfig([credentialsId: env.k8s_config]) {
+                    sh '''
+                        helm template deployment/k8s/report-api \
+                            --set image.tag=${TAG} \
+                            --set namespace=${kube_ns} \
+                            --set connectionStrings.tgs="$tgs_tgs" \
+                            --set connectionStrings.redis="$tgs_redis" \
+                            --set nats.urls="$tgs_nats" \
+                            --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment"
+
+                        helm template deployment/k8s/report-api \
+                            --set image.tag=${TAG} \
+                            --set namespace=${kube_ns} \
+                            --set connectionStrings.tgs="$tgs_tgs" \
+                            --set connectionStrings.redis="$tgs_redis" \
+                            --set nats.urls="$tgs_nats" \
+                            --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment" \
+                        | kubectl -n ${kube_ns} apply -f -
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy promotion-api') {
+            when {
+                expression {
+                    return checkIsRunStage("promotion-api", params['Components'])
+                }
+            }
+            environment {
+                ImageName="${Registry}promotion-api"
+            }
+            steps {
+                withKubeConfig([credentialsId: env.k8s_config]) {
+                    sh '''
+                        helm template deployment/k8s/promotion-api \
+                            --set image.tag=${TAG} \
+                            --set namespace=${kube_ns} \
+                            --set connectionStrings.tgs="$tgs_tgs" \
+                            --set connectionStrings.redis="$tgs_redis" \
+                            --set nats.urls="$tgs_nats" \
+                            --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment"
+
+                        helm template deployment/k8s/promotion-api \
+                            --set image.tag=${TAG} \
+                            --set namespace=${kube_ns} \
+                            --set connectionStrings.tgs="$tgs_tgs" \
+                            --set connectionStrings.redis="$tgs_redis" \
+                            --set nats.urls="$tgs_nats" \
+                            --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment" \
+                        | kubectl -n ${kube_ns} apply -f -
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy scheduler') {
+            when {
+                expression {
+                    return checkIsRunStage("scheduler", params['Components'])
+                }
+            }
+            environment {
+                ImageName="${Registry}schedulers"
+            }
+            steps {
+                withKubeConfig([credentialsId: env.k8s_config]) {
+                    sh '''
+                        helm template deployment/k8s/schedulers \
+                            --set image.tag=${TAG} \
+                            --set namespace=${kube_ns} \
+                            --set connectionStrings.tgs="$tgs_tgs" \
+                            --set connectionStrings.redis="$tgs_redis" \
+                            --set connectionStrings.mongo="$tgs_mongo" \
+                            --set nats.urls="$tgs_nats" \
+                            --set mail.url="$tgs_mail_service" \
+                            --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment"
+                            
+                        helm template deployment/k8s/schedulers \
+                            --set image.tag=${TAG} \
+                            --set namespace=${kube_ns} \
+                            --set connectionStrings.tgs="$tgs_tgs" \
+                            --set connectionStrings.redis="$tgs_redis" \
+                            --set connectionStrings.mongo="$tgs_mongo" \
+                            --set nats.urls="$tgs_nats" \
+                            --set mail.url="$tgs_mail_service" \
+                            --set aspNetCoreEnvironment="$tgs_aspNetCoreEnvironment" \
+                        | kubectl -n ${kube_ns} apply -f -
+                    '''
+                }
+            }
+        }
+
+        stage('Set Db Permission'){
+            steps {
+                script {
+                    withCredentials([string(credentialsId: "jenkins-prod-set-permission-token", variable: "token")]) {
+                        response = httpRequest (consoleLogResponseBody: true,
+                                contentType: 'APPLICATION_JSON',
+                                httpMode: 'GET',
+                                url: "http://16.162.237.128:8080/job/set-permission/buildWithParameters?token=${token}&TgsEnv=${params['TgsEnv']}",
+                                validResponseCodes: '201')
+                        return response
+                    }
+                }
+            }
+        }
+	}
+	
+	post {
+        success {
+             sendTelegram("Pipeline: ${currentBuild.fullDisplayName} OK!\nDeployed Components: ${deployedComponents} \n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+        failure {
+            sendTelegram("<b>Failed Pipeline:</b> ${currentBuild.fullDisplayName} \n Deploy Components: ${deployedComponents} \n Something is wrong with ${env.BUILD_URL}/console\n${currentBuild.getBuildCauses()[0].shortDescription}\n")
+        }
+        always {
+            script {
+                sh '''#!/bin/bash
+                sudo docker rmi $(sudo docker images | awk '{ print \$3 }' | tail -n +2) --force
+                sudo docker system prune -f
+                '''
+            }
+        }
+    }
+}
+
+def checkIsRunStage(currentName, selectedNames) {
+    def arr = selectedNames.split(",")
+    def isRun = false
+
+    if(arr.length > 0)
+        for(i = 0; i < arr.length; i++) {
+            isRun = isRun || (arr[i] == currentName)
+        }
+
+    return isRun
+}
+
+def sendTelegram(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'GET',
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage?text=${encodedMessage}&chat_id=${CHAT_ID}",
+                validResponseCodes: '200')
+        return response
+    }
+}
+
+def sendTelegramHTML(message) {
+    def encodedMessage = URLEncoder.encode(message, "UTF-8")
+
+    withCredentials([string(credentialsId: "telegramToken", variable: "TOKEN"), string(credentialsId: "telegramChatId", variable: "CHAT_ID")]) {
+
+        response = httpRequest (consoleLogResponseBody: true,
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'POST',
+                requestBody: "parse_mode=HTML&text=${encodedMessage}&chat_id=${CHAT_ID}",
+                url: "https://api.telegram.org/bot${TOKEN}/sendMessage",
+                validResponseCodes: '200')
+        return response
+    }
+}
