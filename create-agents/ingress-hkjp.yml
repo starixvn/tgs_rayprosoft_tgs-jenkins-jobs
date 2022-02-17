@@ -3,6 +3,8 @@ kind: Ingress
 metadata:
   name: lobby-hkjp-${domain_}
   namespace: prod
+  labels: 
+    tgs.info: ${domain}-${invite_code}
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
