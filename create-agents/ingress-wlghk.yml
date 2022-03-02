@@ -1,0 +1,78 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lobby-wlghk-${domain_}
+  namespace: prod
+  labels: 
+    tgs.info: ${domain}-${invite_code}
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+        proxy_set_header Brand-Token eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiV0xHSEsiLCJzdWIiOiI2OWQyZTk1Yy00YWRiLTRmODYtYmU5Yi01Mzg2YzUxM2NhOWEiLCJuYmYiOjE2Mzc2MzY1NTcsImV4cCI6MTYzNzY0MDE1NywiaWF0IjoxNjM3NjM2NTU3LCJpc3MiOiJ0Z3MifQ.UObOlKfb8vpkJYfOlM5p-drBwnvqqI6z4ZwUw1S4RdwmvAwMmpeYo1qZnsoJX_Zav7if6iggUkfnUfydSIDjWjNdg73isVe6rdoUkIcQFi57IMye3Aou5AoHTOGWLYoutw_npM_ZEw0q_xB8WeR9S7XsyjTyXcW7vJyhUG7L4xmTHQ1JwqXKNvFrPxHkS7W6SefCIM2dBLuFR8hxipGAFAgD-Z26AyTpJ1hmVVMiJDnJzjsxgPhN0bMFqfe6KRYtodYNcGY3otEFc2xQyZYl6LWbhFXnb-FiR80dykZh3PuvuEErbROSBTDAr6EtKL9KcyEsfvfnyEHHv4G-4FRl7Q;
+        proxy_set_header Agent-Invitation-Code ${invite_code};
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: ${domain}
+    http:
+      paths:
+      - pathType: Prefix
+        path: /api/brandcommunication
+        backend:
+          service:
+            name: brand-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /api/brandlivechat
+        backend:
+          service:
+            name: brand-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /api
+        backend:
+          service:
+            name: operator-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: lobby-wlghk
+            port:
+              number: 80
+  - host: www.${domain}
+    http:
+      paths:
+      - pathType: Prefix
+        path: /api/brandcommunication
+        backend:
+          service:
+            name: brand-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /api/brandlivechat
+        backend:
+          service:
+            name: brand-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /api
+        backend:
+          service:
+            name: operator-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: lobby-wlghk
+            port:
+              number: 80
