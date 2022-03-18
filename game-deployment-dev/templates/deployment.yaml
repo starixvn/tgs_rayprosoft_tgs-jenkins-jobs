@@ -66,6 +66,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.hostIP
+            - name: Logging__Console__FormatterName
+              value: json
           volumeMounts:
             - mountPath: /app/appsettings.json
               name: appsettings
