@@ -54,10 +54,8 @@ spec:
               containerPort: 80
               protocol: TCP
           env:
-            - name: aspnetcore_environment
+            - name: ASPNETCORE_ENVIRONMENT
               value: "{{ .Values.aspNetCoreEnvironment }}"
-            - name: aspnetcore_https_port
-              value: "443"
             - name: GameProviderCode
               value: "{{ .Values.gpCode }}"
             - name: OTEL_SERVICE_NAME
@@ -66,6 +64,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.hostIP
+            - name: Logging__Console__FormatterName
+              value: json
           volumeMounts:
             - mountPath: /app/appsettings.json
               name: appsettings
