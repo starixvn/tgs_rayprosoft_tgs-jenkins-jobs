@@ -88,7 +88,7 @@ spec:
             value: "4"
           - name: HOMEPAGE
             value: "[\"t4-1\",\"t4-2\",\"t4-3\",\"t4-4\"]"
-           - name: THEME
+          - name: THEME
             value: "black"
           {{- end }}
           {{- if eq .Values.lobbyTemplate "t8" }}
