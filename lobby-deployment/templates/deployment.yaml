@@ -50,8 +50,6 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - containerPort: 80
           env:
           - name: CLIENT
             value: "{{ .Values.apiKey }}"
@@ -99,6 +97,11 @@ spec:
           - name: "WAPTEMPLATE"
             value: "8"
           {{- end }}
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: site-data
+              mountPath: /data
           livenessProbe:
             tcpSocket:
               port: 80
@@ -111,3 +114,6 @@ spec:
             periodSeconds: 5
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: site-data
+          emptyDir: {}
