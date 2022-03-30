@@ -61,8 +61,6 @@ spec:
             value: "{{ .Values.currency }}"
           - name: BRAND
             value: "{{ .Values.brand }}"
-          - name: SITE
-            value: "{{ .Values.site }}"
           - name: AFFILIATE_ID
             value: "{{ .Values.affiliateId }}"
           - name: DEFAULT_LANGUAGE
