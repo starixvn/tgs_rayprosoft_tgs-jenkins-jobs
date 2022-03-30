@@ -63,27 +63,39 @@ spec:
             value: "{{ .Values.brand }}"
           - name: SITE
             value: "{{ .Values.site }}"
-          - name: THEME
-            value: "red"
           - name: AFFILIATE_ID
             value: "{{ .Values.affiliateId }}"
           - name: DEFAULT_LANGUAGE
             value: "{{ .Values.defaultLanguage }}"
-          - name: LANGUAGES
-            value: "[{\"name\":\"zh-CN\",\"label\":\"简体\"},{\"name\":\"zh-TW\",\"label\":\"繁體\"},{\"name\":\"en-US\",\"label\":\"English\"},{\"name\":\"th-TH\",\"label\":\"Thai\"}]"
           - name: SOURCE_URL
             value: "https://images.srvptt.com/"
+          {{- if eq .Values.lobbyTemplate "t1" }}
+          - name: THEME
+            value: "red"
+          {{- end }}
+          {{- if eq .Values.lobbyTemplate "t2" }}
+          - name: THEME
+            value: "red"
+          {{- end }}
           {{- if eq .Values.lobbyTemplate "t3" }}
           - name: "WAPTEMPLATE"
             value: "3"
           - name: HOMEPAGE
             value: "[\"t3-1\",\"t3-2\",\"t3-3\"]"
+          - name: THEME
+            value: "black"
           {{- end }}
           {{- if eq .Values.lobbyTemplate "t4" }}
           - name: "WAPTEMPLATE"
             value: "4"
           - name: HOMEPAGE
             value: "[\"t4-1\",\"t4-2\",\"t4-3\",\"t4-4\"]"
+           - name: THEME
+            value: "black"
+          {{- end }}
+          {{- if eq .Values.lobbyTemplate "t8" }}
+          - name: "WAPTEMPLATE"
+            value: "8"
           {{- end }}
           livenessProbe:
             tcpSocket:

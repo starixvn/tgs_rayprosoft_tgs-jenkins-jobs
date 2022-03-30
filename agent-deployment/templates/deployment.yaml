@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "lobby.fullname" . }}
+  labels:
+    type: frontend
+    {{- include "lobby.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "lobby.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        type: frontend
+        {{- include "lobby.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if eq .Values.namespace "staging" }}
+      nodeSelector:
+        dedicated: nonprod
+      tolerations:
+      - effect: NoSchedule
+        key: dedicated
+        operator: Equal
+        value: nonprod
+      {{- end }}
+      {{- if eq .Values.namespace "prod" }}
+      nodeSelector:
+        dedicated: prod
+      tolerations:
+      - effect: NoSchedule
+        key: dedicated
+        operator: Equal
+        value: prod
+      {{- end }}
+      containers:
+        - name: {{ .Values.lobbyName }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+          - name: CLIENT
+            value: "{{ .Values.apiKey }}"
+          - name: CURRENCY
+            value: "{{ .Values.currency }}"
+          - name: BRAND
+            value: "{{ .Values.brand }}"
+          - name: SITE
+            value: "{{ .Values.site }}"
+          - name: THEME
+            value: "red"
+          - name: AFFILIATE_ID
+            value: "{{ .Values.affiliateId }}"
+          - name: DEFAULT_LANGUAGE
+            value: "{{ .Values.defaultLanguage }}"
+          - name: SOURCE_URL
+            value: "https://images.srvptt.com/"
+          livenessProbe:
+            tcpSocket:
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
