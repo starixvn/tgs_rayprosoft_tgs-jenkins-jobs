@@ -22,7 +22,7 @@ spec:
       - path: /
         backend:
           service:
-            name: {{ .Values.lobbyName }}
+            name: {{ .lobbyName }}
             port: 
               number: 80
   {{- end }} 
