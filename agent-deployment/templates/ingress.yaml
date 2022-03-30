@@ -13,13 +13,15 @@ spec:
   - host: {{ .domain }}
     http:
       paths:
-      - path: /api
+      - pathType: Prefix
+        path: /api
         backend:
           service: 
             name: agent-api
             port: 
               number: 80
-      - path: /
+      - pathType: Prefix
+        path: /
         backend:
           service:
             name: {{ .lobbyName }}
