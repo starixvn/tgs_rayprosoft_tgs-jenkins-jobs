@@ -15,10 +15,14 @@ spec:
       paths:
       - path: /api
         backend:
-          serviceName: agent-api
-          servicePort: 80
+          service: 
+            name: agent-api
+            port: 
+              number: 80
       - path: /
         backend:
-          serviceName: {{ .Values.lobbyName }}
-          servicePort: 80
+          service:
+            name: {{ .Values.lobbyName }}
+            port: 
+              number: 80
   {{- end }} 

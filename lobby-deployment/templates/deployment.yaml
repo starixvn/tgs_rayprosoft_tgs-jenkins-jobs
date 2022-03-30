@@ -96,7 +96,9 @@ spec:
             value: "8"
           {{- end }}
           ports:
-            - containerPort: 80
+            - name: http
+              containerPort: 80
+              protocol: TCP
           volumeMounts:
             - name: site-data
               mountPath: /data
