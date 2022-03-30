@@ -1,39 +1,24 @@
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Values.lobbyName }}
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-    kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/configuration-snippet: |
         proxy_set_header Brand-Token {{ .Values.brandToken }};
 spec:
-  tls:
-  {{- range .Values.domains }}
-  - hosts:
-    - {{ .domain }}
-    secretName: {{ .domain }}
-  {{- end }} 
+  ingressClassName: nginx
   rules:
   {{- range .Values.domains }}
   - host: {{ .domain }}
     http:
       paths:
-      - path: /api/brandcommunication
+      - path: /api
         backend:
-          serviceName: brand-api
-          servicePort: 80
-      - path: /api/brandlivechat
-        backend:
-          serviceName: brand-api
+          serviceName: agent-api
           servicePort: 80
       - path: /
         backend:
-          serviceName: {{ .lobbyName }}
-          servicePort: 80
-      - path: /api
-        backend:
-          serviceName: {{ .backendApi }}
+          serviceName: {{ .Values.lobbyName }}
           servicePort: 80
   {{- end }} 
