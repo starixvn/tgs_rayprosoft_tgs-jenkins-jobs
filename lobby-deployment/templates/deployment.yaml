@@ -93,6 +93,14 @@ spec:
            - name: THEME
             value: "black"
           {{- end }}
+          {{- if eq .Values.lobbyTemplate "t5" }}
+          - name: "WAPTEMPLATE"
+            value: "5"
+          - name: HOMEPAGE
+            value: "[\"t4-1\",\"t4-2\",\"t4-3\",\"t4-4\"]"
+           - name: THEME
+            value: "black"
+          {{- end }}
           {{- if eq .Values.lobbyTemplate "t8" }}
           - name: "WAPTEMPLATE"
             value: "8"
