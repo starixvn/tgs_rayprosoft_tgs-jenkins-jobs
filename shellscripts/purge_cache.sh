@@ -21,7 +21,7 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
     zonename=${zone_array[1]/\"}
 	echo "${zonename}=${zoneid}"
 	
-	if [[ "${zonename}" == "$1"]]; then
+	if [[ "${zonename}" == "$1" ]]; then
 		response_purge=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/purge_cache" \
 			 -H "X-Auth-Email: ${auth_email}" \
 			 -H "X-Auth-Key: ${auth_key}" \
