@@ -1,0 +1,78 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lobby-gmo-${domain_}
+  namespace: prod
+  labels: 
+    tgs.info: ${domain}-${invite_code}
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+        proxy_set_header Brand-Token eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR01PIiwic3ViIjoiNjhiMTY2NjYtNzgyNS00Njc0LTk5NGUtOTk1ZmQzNTU5ODM1IiwibmJmIjoxNjQ2NjQzMzIxLCJleHAiOjE2NDY2NDY5MjEsImlhdCI6MTY0NjY0MzMyMSwiaXNzIjoidGdzIn0.gGKYtqdyoECBUgF0FDBPJvxOPxnnp9_FMCR6ZWYMdFF9UAjDzj_Ppx_lEOZi0ThaCuIemcWOU3-1J9iVQaoxispgzuV9XaO7jNRTvrHbFW4kj_0MpOoywQLKsCyvU-wzWYugaYO5Fu1LBVe1O69uWPpHSf9fxb3NBGmoSFNW_KvrlOnfBmgg-kszjAuF4GRJTPExCvtpdiEv4OBA_kMQQNKr91SA52nYjeRnhwCqlfrKIXMhdDYyOaMCHdCkYY_-3hRdOA1Jznk6DZ8bi0t_BdQRLd0eR4cde2L5UnMgRuujSvsEBpGybebjY492dvj4T_NsvCcuxh3YxhIF1pm2Zg;
+        proxy_set_header Agent-Invitation-Code ${invite_code};
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: ${domain}
+    http:
+      paths:
+      - pathType: Prefix
+        path: /api/brandcommunication
+        backend:
+          service:
+            name: brand-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /api/brandlivechat
+        backend:
+          service:
+            name: brand-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /api
+        backend:
+          service:
+            name: operator-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: lobby-gmo
+            port:
+              number: 80
+  - host: www.${domain}
+    http:
+      paths:
+      - pathType: Prefix
+        path: /api/brandcommunication
+        backend:
+          service:
+            name: brand-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /api/brandlivechat
+        backend:
+          service:
+            name: brand-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /api
+        backend:
+          service:
+            name: operator-api
+            port:
+              number: 80
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: lobby-gmo
+            port:
+              number: 80
