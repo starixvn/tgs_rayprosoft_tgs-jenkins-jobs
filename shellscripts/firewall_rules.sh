@@ -1,5 +1,6 @@
 #!/bin/bash
 ## https://api.cloudflare.com/#firewall-access-rule-for-a-zone-list-access-rules
+## https://api.cloudflare.com/#firewall-rules-get-individual-firewall-rule
 
 auth_email=infrastructure@rayprosoft.com
 auth_key=ea16209785cb4fa06858c5571ff5b8057840f
@@ -14,6 +15,7 @@ response=$(curl -X GET "https://api.cloudflare.com/client/v4/zones?per_page=1000
 #echo ${response} | jq '.result'
 
 declare -i index=0
+declare -a arr=("srvptt.com" "srvttt.com" "yydsgo.xyz" "rpgp.cc");
 
 # FOR PURGE
 for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
@@ -23,13 +25,12 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
     zonename=${zone_array[1]/\"}
 	echo "${zonename}=${zoneid}"
 	
-	if [[ "${zonename}" == "$1" ]]; then
-		response_purge=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/access_rules/rules" \
+	if [[ ! ${arr[*]} =~ "${zonename}" ]]; then
+		response_purge=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules?page=1&per_page=20" \
 			 -H "X-Auth-Email: ${auth_email}" \
 			 -H "X-Auth-Key: ${auth_key}" \
-			 -H "Content-Type: application/json" \
-			 --data '{"purge_everything":true}')
-		echo ${response_purge} | jq
+			 -H "Content-Type: application/json")
+		echo ${response_purge}
 		break
 	fi
 done
