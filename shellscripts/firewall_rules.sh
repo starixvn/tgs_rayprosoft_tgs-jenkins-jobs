@@ -31,6 +31,5 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 			 -H "X-Auth-Key: ${auth_key}" \
 			 -H "Content-Type: application/json")
 		echo ${response_purge}
-		break
 	fi
 done
