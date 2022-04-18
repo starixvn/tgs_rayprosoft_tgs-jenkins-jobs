@@ -24,4 +24,4 @@ response2=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/43d010a66f6
      --data '[{"action":"block","paused":false,"description":"Block Taiwan","filter":{"expression":"(ip.geoip.countryin{\"TW\"} and not ip.src in {220.132.206.70})","paused":false}}]')
 
 
- echo ${response2} | jq '.result'
+ echo ${response2}
