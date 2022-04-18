@@ -40,8 +40,8 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 							 -H "X-Auth-Key: ${auth_key}" \
 							 -H "Content-Type: application/json" \
 							 --data '[{"action":"block","paused":false,"description":"Block Taiwan","filter":{"expression":"(ip.geoip.countryin{\"TW\"} and not ip.src in {220.132.206.70})","paused":false}}]')
-						echo "create result"
-                        echo ${response_create_rule}
+						echo "create result:"
+                        echo ${response_create_rule} | jq
                 else
                         echo "$zonename 已設定"
                         for rule_id in $(echo ${response_rule} | jq '.result' | jq  '.[] | .id'); do
