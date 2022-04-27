@@ -35,7 +35,8 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
     read -a zone_array <<< ${zone}
 	zoneid=${zone_array[0]/\"}
     zonename=${zone_array[1]/\"}
-
+	echo "${zoneid} ${zonename}"
+	
 	for new_domain in "${arr[@]}"
 	do
 	   if [[ "${new_domain}" == "${zonename}" ]]; then
