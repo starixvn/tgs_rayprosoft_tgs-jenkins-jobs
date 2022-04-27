@@ -18,7 +18,7 @@ CreateDnsRecord(){
 }
 
 
-declare -a arr=("moneyclub8.com" "betbet88.net" "hk2811.com" "hk2812.com" "hk2813.com" "hk2815.com" "hk2817.com" "hk2819.com" "hk2820.com" "hk2821.com" "hk2822.com" "hk2823.com" "hk2825.com" "hk2826.com" "hk2827.com" "hk2830.com" "hk2826.com" "hk2831.com" "hk2832.com" "hk2833.com" "hk2835.com");
+declare -a arr=("pinasbet.vip" "pinasbet.net" "pinasbet.org" "pinasbet.co" "pbslots.com" "pbslots.net" "pbslots.org" "pbslots.co" "pbslots.vip");
 
 response=$(curl -X GET "https://api.cloudflare.com/client/v4/zones?per_page=1000" \
     -H "X-Auth-Email: ${auth_email}" \
@@ -95,7 +95,31 @@ for zone in "${arr[@]}"; do
 		 --data '{"value":"on"}')
 		 
 	echo ${result_brotli} 
-	 
+	
+	result_dns_records = $(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zoneid}/dns_records?page=1&per_page=100&order=type&direction=desc&match=all" \
+		 -H "X-Auth-Email: ${auth_email}" \
+		 -H "X-Auth-Key: ${auth_key}" \
+		 -H "Content-Type: application/json")
+	
+	
+	response_firewall_rules=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
+		 -H "X-Auth-Email: ${auth_email}" \
+		 -H "X-Auth-Key: ${auth_key}" \
+		 -H "Content-Type: application/json" \
+		 --data '[{"action": "block","paused": false,"description": "Block Taiwan","filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {220.132.206.70})","paused": false }}]')
+
+	echo "response_firewall_rules: ${response_firewall_rules}"
+
+	# FOR DELETE DNS
+	for dns_id in $(echo ${response} | jq '.result' | jq  '.[] | .id'); do
+		result_dns_delete=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/dns_records/${dns_id}" \
+				-H "X-Auth-Email: ${auth_email}" \
+				-H "X-Auth-Key: ${auth_key}" \
+				-H "Content-Type: application/json")
+		echo "delete result: $result_dns_delete";
+	done
+
+	
 	dns_record_result=$(CreateDnsRecord ${zone} ${zoneid})
 	dns_record_result=$(CreateDnsRecord "www" ${zoneid})
 	echo ${dns_record_result};
