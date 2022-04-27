@@ -62,7 +62,7 @@ for zone in "${arr[@]}"; do
 	     -H "Content-Type: application/json" \
 	     --data "{\"name\":\"${zone}\",\"account\":{\"id\":\"${account_id}\"},\"jump_start\":false,\"type\":\"full\"}")
 	echo "result_create_zone:"
-	echo "${result_create_zone} | jq"
+	echo ${result_create_zone} | jq
 
 	zoneid=$(echo ${result_create_zone} | cut -c18-49)
 	 
@@ -73,7 +73,7 @@ for zone in "${arr[@]}"; do
 		--data "{\"value\":\"on\"}")
 	 
 	echo "result_automatic_https_rewrites:"
-	echo "${result_automatic_https_rewrites} | jq"
+	echo ${result_automatic_https_rewrites} | jq
 	 
 	result_always_use_https=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zoneid}/settings/always_use_https" \
 		 -H "X-Auth-Email: ${auth_email}" \
@@ -82,7 +82,7 @@ for zone in "${arr[@]}"; do
 		--data "{\"value\":\"on\"}")
 	
 	echo "result_always_use_https:"
-	echo "${result_always_use_https} | jq"
+	echo ${result_always_use_https} | jq
 	 
 	result_minify=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zoneid}/settings/minify" \
 		-H "X-Auth-Email: ${auth_email}" \
@@ -91,7 +91,7 @@ for zone in "${arr[@]}"; do
 		--data "{\"value\":{\"css\":\"on\",\"html\":\"on\",\"js\":\"on\"}}")
 	 
 	echo "result_minify:"
-	echo "${result_minify} | jq"
+	echo ${result_minify} | jq
 	
 	result_brotli=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zoneid}/settings/brotli" \
 		-H "X-Auth-Email: ${auth_email}" \
@@ -100,7 +100,7 @@ for zone in "${arr[@]}"; do
 		 --data '{"value":"on"}')
 		 
 	echo "result_brotli:"
-	echo "${result_brotli} | jq"
+	echo ${result_brotli} | jq
 
 	response_firewall_rules=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
 		 -H "X-Auth-Email: ${auth_email}" \
@@ -109,7 +109,7 @@ for zone in "${arr[@]}"; do
 		 --data '[{"action": "block","paused": false,"description": "Block Taiwan","filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {220.132.206.70})","paused": false }}]')
 
 	echo "response_firewall_rules:"
-	echo "$ | {response_firewall_rules} | jq"
+	echo ${response_firewall_rules} | jq
 	
 	result_dns_records_list = $(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zoneid}/dns_records?page=1&per_page=100&order=type&direction=desc&match=all" \
 	 -H "X-Auth-Email: ${auth_email}" \
@@ -123,13 +123,13 @@ for zone in "${arr[@]}"; do
 				-H "X-Auth-Key: ${auth_key}" \
 				-H "Content-Type: application/json")
 		echo "delete result:"
-		echo "$result_dns_delete | jq"
+		echo $result_dns_delete | jq
 	done
 	
 	dns_record_result=$(CreateDnsRecord ${zone} ${zoneid})
 	echo "dns_record_result:"
-	echo "${dns_record_result} | jq"
+	echo ${dns_record_result} | jq
 	dns_record_result=$(CreateDnsRecord "www" ${zoneid})
 	echo "dns_record_result:"
-	echo "${dns_record_result} | jq"
+	echo ${dns_record_result} | jq
 done
