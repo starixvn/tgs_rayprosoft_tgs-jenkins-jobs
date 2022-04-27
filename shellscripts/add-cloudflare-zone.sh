@@ -96,12 +96,7 @@ for zone in "${arr[@]}"; do
 		 
 	echo ${result_brotli} 
 	
-	result_dns_records = $(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zoneid}/dns_records?page=1&per_page=100&order=type&direction=desc&match=all" \
-		 -H "X-Auth-Email: ${auth_email}" \
-		 -H "X-Auth-Key: ${auth_key}" \
-		 -H "Content-Type: application/json")
-	
-	
+
 	response_firewall_rules=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
 		 -H "X-Auth-Email: ${auth_email}" \
 		 -H "X-Auth-Key: ${auth_key}" \
@@ -109,9 +104,16 @@ for zone in "${arr[@]}"; do
 		 --data '[{"action": "block","paused": false,"description": "Block Taiwan","filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {220.132.206.70})","paused": false }}]')
 
 	echo "response_firewall_rules: ${response_firewall_rules}"
+	
+	result_dns_records_list = $(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zoneid}/dns_records?page=1&per_page=100&order=type&direction=desc&match=all" \
+	 -H "X-Auth-Email: ${auth_email}" \
+	 -H "X-Auth-Key: ${auth_key}" \
+	 -H "Content-Type: application/json")
 
+	
+	
 	# FOR DELETE DNS
-	for dns_id in $(echo ${response} | jq '.result' | jq  '.[] | .id'); do
+	for dns_id in $(echo ${result_dns_records_list} | jq '.result' | jq  '.[] | .id'); do
 		result_dns_delete=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/dns_records/${dns_id}" \
 				-H "X-Auth-Email: ${auth_email}" \
 				-H "X-Auth-Key: ${auth_key}" \
