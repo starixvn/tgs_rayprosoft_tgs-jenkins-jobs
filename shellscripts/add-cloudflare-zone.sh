@@ -14,7 +14,7 @@ CreateDnsRecord(){
              -H "Content-Type: application/json" \
              --data '{"type":"CNAME","name":"'$1'","content":"'${content}'","proxied":true}')
 
-	echo ${result}
+	echo "CreateDnsRecord: ${result}"
 }
 
 
@@ -48,21 +48,21 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 		     -H "X-Auth-Email: ${auth_email}" \
 		     -H "X-Auth-Key: ${auth_key}" \
 		     -H "Content-Type: application/json")
-		echo "delete result: $result";
+		echo "delete zone result: ${result}";
 	   fi
 	done
 done
 
 for zone in "${arr[@]}"; do
 	echo ${zone}
-	result2=$(curl -X POST "https://api.cloudflare.com/client/v4/zones" \
+	result_create_zone=$(curl -X POST "https://api.cloudflare.com/client/v4/zones" \
 	     -H "X-Auth-Email: ${auth_email}" \
 	     -H "X-Auth-Key: ${auth_key}" \
 	     -H "Content-Type: application/json" \
 	     --data "{\"name\":\"${zone}\",\"account\":{\"id\":\"${account_id}\"},\"jump_start\":false,\"type\":\"full\"}")
-	echo ${result2}
+	echo "result_create_zone: ${result_create_zone}"
 
-	zoneid=$(echo ${result2} | cut -c18-49)
+	zoneid=$(echo ${result_create_zone} | cut -c18-49)
 	 
 	result_automatic_https_rewrites=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zoneid}/settings/automatic_https_rewrites" \
 		 -H "X-Auth-Email: ${auth_email}" \
@@ -70,7 +70,7 @@ for zone in "${arr[@]}"; do
 	     -H "Content-Type: application/json" \
 		--data "{\"value\":\"on\"}")
 	 
-	echo ${result_automatic_https_rewrites}
+	echo "result_automatic_https_rewrites: ${result_automatic_https_rewrites}"
 	 
 	result_always_use_https=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zoneid}/settings/always_use_https" \
 		 -H "X-Auth-Email: ${auth_email}" \
@@ -78,7 +78,7 @@ for zone in "${arr[@]}"; do
 	     -H "Content-Type: application/json" \
 		--data "{\"value\":\"on\"}")
 	
-	echo ${result_always_use_https}
+	echo "result_always_use_https: ${result_always_use_https}"
 	 
 	result_minify=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zoneid}/settings/minify" \
 		-H "X-Auth-Email: ${auth_email}" \
@@ -86,7 +86,7 @@ for zone in "${arr[@]}"; do
 	    -H "Content-Type: application/json" \
 		--data "{\"value\":{\"css\":\"on\",\"html\":\"on\",\"js\":\"on\"}}")
 	 
-	echo ${result_minify}
+	echo "result_minify: ${result_minify}"
 	
 	result_brotli=$(curl -X PATCH "https://api.cloudflare.com/client/v4/zones/${zoneid}/settings/brotli" \
 		-H "X-Auth-Email: ${auth_email}" \
@@ -94,8 +94,7 @@ for zone in "${arr[@]}"; do
 	    -H "Content-Type: application/json" \
 		 --data '{"value":"on"}')
 		 
-	echo ${result_brotli} 
-	
+	echo "result_brotli: ${result_brotli}"
 
 	response_firewall_rules=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
 		 -H "X-Auth-Email: ${auth_email}" \
@@ -110,19 +109,17 @@ for zone in "${arr[@]}"; do
 	 -H "X-Auth-Key: ${auth_key}" \
 	 -H "Content-Type: application/json")
 
-	
-	
 	# FOR DELETE DNS
 	for dns_id in $(echo ${result_dns_records_list} | jq '.result' | jq  '.[] | .id'); do
 		result_dns_delete=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/dns_records/${dns_id}" \
 				-H "X-Auth-Email: ${auth_email}" \
 				-H "X-Auth-Key: ${auth_key}" \
 				-H "Content-Type: application/json")
-		echo "delete result: $result_dns_delete";
+		echo "delete result: $result_dns_delete"
 	done
-
 	
 	dns_record_result=$(CreateDnsRecord ${zone} ${zoneid})
+	echo "dns_record_result: ${dns_record_result}"
 	dns_record_result=$(CreateDnsRecord "www" ${zoneid})
-	echo ${dns_record_result};
+	echo "dns_record_result: ${dns_record_result}"
 done
