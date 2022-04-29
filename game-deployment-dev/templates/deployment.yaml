@@ -72,15 +72,17 @@ spec:
               readOnly: true
               subPath: appsettings.json
           livenessProbe:
-            tcpSocket:
-              port: 80
-            initialDelaySeconds: 30
-            periodSeconds: 5
-          readinessProbe:
-            tcpSocket:
-              port: 80
-            initialDelaySeconds: 30
-            periodSeconds: 5
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5   
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 30
+            periodSeconds: 2
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
