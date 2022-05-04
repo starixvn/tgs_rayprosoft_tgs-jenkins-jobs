@@ -28,32 +28,3 @@ if [ $result4 = "0" ]; then
         echo "Staging Executed"
         curl "https://api.telegram.org/bot1780137038:AAHDIVxs2somlHZ5QbZKq1X403NnWAPXVn4/sendMessage?chat_id=-1001114115188&text=$2%20apilogs%20updated"
 fi
-
-
-
-etcdctl snapshot save --cacert="/etc/kubernetes/pki/etcd/ca.crt" --cert="/etc/kubernetes/pki/etcd/server.crt" --key="/etc/kubernetes/pki/etcd/server.key" /tmp/dev-backup
-
-
-
-kubectl get nodes -o=jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.taints[0].value}{"\n"}{end}'
- 
- 
- 
- ETCDCTL_API=3 etcdctl --endpoints https://[127.0.0.1]:2379 \
-  --cert=/etc/kubernetes/pki/etcd/server.crt \
-  --key=/etc/kubernetes/pki/etcd/server.key \
-  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
-  member list
-  
-
-	
-	ETCDCTL_API=3 etcdctl --endpoints=https://[127.0.0.1]:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt \
-     --name=master \
-     --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key \
-     --data-dir /var/lib/etcd-from-backup \
-     --initial-cluster=master=https://127.0.0.1:2380 \
-     --initial-cluster-token etcd-cluster-1 \
-     --initial-advertise-peer-urls=https://127.0.0.1:2380 \
-     snapshot restore /nfsshare/dev-backup
-	 
-  

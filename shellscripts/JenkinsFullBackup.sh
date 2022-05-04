@@ -31,4 +31,3 @@ tar zcvf $JENKINS_BACKUP_HOME/$JENKINS_BACKUP_FILE \
 find $JENKINS_BACKUP_HOME/*.tar.gz -type f -mtime +1 -exec rm -rf {} \;
 aws s3 rm  s3://tgs-project/dev-backup/$JENKINS_BACKUP_FILE_TO_DELETE
 aws s3 cp $JENKINS_BACKUP_HOME/$JENKINS_BACKUP_FILE s3://tgs-project/dev-backup/
-~
