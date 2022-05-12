@@ -21,6 +21,9 @@ declare -a arr=("srvptt.com" "srvttt.com" "yydsgo.xyz" "rpgp.cc" "mess888.com");
                          -H "X-Auth-Key: ${auth_key}" \
                          -H "Content-Type: application/json")
 	IFS=''
+	
+	echo ${response_rule} | jq
+	
 	rules=$(echo ${response_rule} | jq '.result' | jq '.[] .id')
 	if [ -z "$rules" ]; then
 			echo "$zonename 未設定"			
