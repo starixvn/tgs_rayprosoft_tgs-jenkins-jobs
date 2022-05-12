@@ -6,7 +6,7 @@ auth_key=ea16209785cb4fa06858c5571ff5b8057840f
 account_id=bca33f2713e936cee007fa34f24a773f
 content=ac14ad4ad050b4a71b144385e51a20f5-1241810226.ap-east-1.elb.amazonaws.com
 officeip=36.234.19.51
-zoneid=e5c37e050acbf7ca0de04c0b3eaec53f
+zoneid=e5c37e050acbf7ca0de04c0b3eaec53f   #1388bet.io
 
 echo ${data} | jq
 
@@ -46,9 +46,9 @@ declare -a arr=("srvptt.com" "srvttt.com" "yydsgo.xyz" "rpgp.cc" "mess888.com");
 			echo ${response_rule} | jq
 			
 			for rule_id in $(echo ${response_rule} | jq '.result' | jq  '.[] | .id'); do
-					echo "ruleid=${rule_id//"/}"
+					echo "ruleid=${rule_id//\"/}"
 					
-					echo "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id//"/}"
+					echo "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id//\"/}"
 					
 					response_delete_rule=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}" \
 						 -H "X-Auth-Email: ${auth_email}" \
