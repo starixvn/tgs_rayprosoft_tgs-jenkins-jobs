@@ -23,7 +23,7 @@ response2=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/e5c37e050ac
      -H "X-Auth-Email: ${auth_email}" \
 	 -H "X-Auth-Key: ${auth_key}" \
      -H "Content-Type: application/json" \
-     --data ${data})
+     --data '[{"action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]')
 
 
 echo ${response2} | jq
