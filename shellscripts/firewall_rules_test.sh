@@ -17,11 +17,14 @@ declare -i index=0
 declare -a arr=("srvptt.com" "srvttt.com" "yydsgo.xyz" "rpgp.cc" "mess888.com");
 
 
-response2=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/43d010a66f6d6176d6a56cbde8a0e95b/firewall/rules" \
+
+ruleid=2298e157ea8743458590b54825ab4045
+
+response2=$(curl -X PUT "https://api.cloudflare.com/client/v4/zones/e5c37e050acbf7ca0de04c0b3eaec53f/firewall/rules" \
      -H "X-Auth-Email: ${auth_email}" \
 	 -H "X-Auth-Key: ${auth_key}" \
      -H "Content-Type: application/json" \
-     --data '[{"action": "block","paused": false,"description": "Block Taiwan","filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {220.132.206.70})","paused": false }}]')
+     --data '[{ "id": "' + ${ruleid} + '", "action": "block","paused": false,"description": "Block Taiwan","filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {220.132.206.70})","paused": false }}]')
 
 
  echo ${response2} | jq
