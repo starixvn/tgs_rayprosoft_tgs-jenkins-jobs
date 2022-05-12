@@ -39,18 +39,19 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 							 -H "X-Auth-Email: ${auth_email}" \
 							 -H "X-Auth-Key: ${auth_key}" \
 							 -H "Content-Type: application/json" \
-							 --data "[{\"action\": \"block","paused\": false,\"description\": \"Block Taiwan\",\"filter\":{\"expression\": \"(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})\",\"paused\": false }}]")
+							 --data '[{"action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]')
 						echo "create result:"
                         echo ${response_create_rule} | jq
                 else
                         echo "$zonename 已設定"
+						
                         for rule_id in $(echo ${response_rule} | jq '.result' | jq  '.[] | .id'); do
                                 echo "ruleid=$rule_id"
 								response_delete_rule=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}" \
 									 -H "X-Auth-Email: ${auth_email}" \
 									 -H "X-Auth-Key: ${auth_key}" \
 									 -H "Content-Type: application/json" \
-									 --data "{}")
+									 --data '{}')
 								echo "delete result:"
 								echo ${response_delete_rule} | jq
 						done
@@ -59,7 +60,7 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 							 -H "X-Auth-Email: ${auth_email}" \
 							 -H "X-Auth-Key: ${auth_key}" \
 							 -H "Content-Type: application/json" \
-							 --data "[{\"action\": \"block","paused\": false,\"description\": \"Block Taiwan\",\"filter\":{\"expression\": \"(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})\",\"paused\": false }}]")
+							 --data '[{"action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]')
 						echo "create result:"
                         echo ${response_create_rule} | jq
                 fi
