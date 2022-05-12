@@ -24,7 +24,7 @@ response2=$(curl -X PUT "https://api.cloudflare.com/client/v4/zones/e5c37e050acb
      -H "X-Auth-Email: ${auth_email}" \
 	 -H "X-Auth-Key: ${auth_key}" \
      -H "Content-Type: application/json" \
-     --data '[{ "id": \""${ruleid}"\", \"action\": \"block\",\"paused\": false,\"description\": \"Block Taiwan\",\"filter\":{\"expression\": \"(ip.geoip.country in {\"TW\"} and not ip.src in {220.132.206.70})\",\"paused\": false }}]")
+     --data '[{ \"id\": \""${ruleid}"\", \"action\": \"block\",\"paused\": false,\"description\": \"Block Taiwan\",\"filter\":{\"expression\": \"(ip.geoip.country in {\"TW\"} and not ip.src in {220.132.206.70})\",\"paused\": false }}]")
 
 
  echo ${response2} | jq
