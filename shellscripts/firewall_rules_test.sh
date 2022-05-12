@@ -7,7 +7,7 @@ account_id=bca33f2713e936cee007fa34f24a773f
 content=ac14ad4ad050b4a71b144385e51a20f5-1241810226.ap-east-1.elb.amazonaws.com
 officeip=36.234.19.51
 data='{"action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}'
-echo ${data}
+echo ${data} | jq
 
 response=$(curl -X GET "https://api.cloudflare.com/client/v4/zones?per_page=1000" \
     -H "X-Auth-Email: ${auth_email}" \
@@ -23,7 +23,7 @@ response2=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/e5c37e050ac
      -H "X-Auth-Email: ${auth_email}" \
 	 -H "X-Auth-Key: ${auth_key}" \
      -H "Content-Type: application/json" \
-     --data '{"action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}')
+     --data ${data})
 
 
 echo ${response2} | jq
