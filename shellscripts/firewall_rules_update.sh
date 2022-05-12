@@ -40,21 +40,21 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 							 -H "X-Auth-Email: ${auth_email}" \
 							 -H "X-Auth-Key: ${auth_key}" \
 							 -H "Content-Type: application/json" \
-							 --data '[{"action": "block","paused": false,"description": "Block Taiwan","filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {${officeip}})","paused": false }}]')
+							 --data '[{"action": "block","paused": false,"description": "Block Taiwan","filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {36.234.19.51})","paused": false }}]')
 						echo "create result:"
                         echo ${response_create_rule} | jq
                 else
                         echo "$zonename 已設定"
-                        #for rule_id in $(echo ${response_rule} | jq '.result' | jq  '.[] | .id'); do
-                        #        echo "ruleid=$rule_id"
-						#		response_update_rule=$(curl -X PUT "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
-						#			 -H "X-Auth-Email: ${auth_email}" \
-						#			 -H "X-Auth-Key: ${auth_key}" \
-						#			 -H "Content-Type: application/json" \
-						#			 --data '[{"id": "$rule_id","action": "block","paused": false,"description": "Block Taiwan","filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {${officeip}})","paused": false }}]')
-						#		echo "update result:"
-						#		echo ${response_update_rule} | jq
-						#done
+                        for rule_id in $(echo ${response_rule} | jq '.result' | jq  '.[] | .id'); do
+                                echo "ruleid=$rule_id"
+								response_update_rule=$(curl -X PUT "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
+									 -H "X-Auth-Email: ${auth_email}" \
+									 -H "X-Auth-Key: ${auth_key}" \
+									 -H "Content-Type: application/json" \
+									 --data '[{"id": "\"$rule_id"\","action": "block","paused": false,"description": "Block Taiwan","filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {36.234.19.51})","paused": false }}]')
+								echo "update result:"
+								echo ${response_update_rule} | jq
+						done
                 fi
         fi
 done
