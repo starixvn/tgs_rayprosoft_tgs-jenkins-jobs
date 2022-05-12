@@ -20,11 +20,6 @@ response=$(curl -X GET "https://api.cloudflare.com/client/v4/zones?per_page=1000
 declare -i index=0
 declare -a arr=("srvptt.com" "srvttt.com" "yydsgo.xyz" "rpgp.cc" "mess888.com");
 
-
-
-
-
-
  response_rule=$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules?page=1&per_page=20" \
                          -H "X-Auth-Email: ${auth_email}" \
                          -H "X-Auth-Key: ${auth_key}" \
@@ -50,7 +45,7 @@ declare -a arr=("srvptt.com" "srvttt.com" "yydsgo.xyz" "rpgp.cc" "mess888.com");
 					
 					echo "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id//\"/}"
 					
-					response_delete_rule=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}" \
+					response_delete_rule=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id//\"/}" \
 						 -H "X-Auth-Email: ${auth_email}" \
 						 -H "X-Auth-Key: ${auth_key}" \
 						 -H "Content-Type: application/json" \
@@ -76,3 +71,4 @@ response2=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/e5c37e050ac
 
 
 echo "final result: ${response2}" | jq
+
