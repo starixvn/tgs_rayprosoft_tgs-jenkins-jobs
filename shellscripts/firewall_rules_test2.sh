@@ -16,8 +16,6 @@ declare -i index=0
 declare -a arr=("srvptt.com" "srvttt.com" "yydsgo.xyz" "rpgp.cc" "mess888.com");
 
 
-
-
     response_rule=$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules?page=1&per_page=20" \
                          -H "X-Auth-Email: ${auth_email}" \
                          -H "X-Auth-Key: ${auth_key}" \
@@ -26,6 +24,10 @@ declare -a arr=("srvptt.com" "srvttt.com" "yydsgo.xyz" "rpgp.cc" "mess888.com");
 	rules=$(echo ${response_rule} | jq '.result' | jq '.[] .id')
 	if [ -z "$rules" ]; then
 			echo "$zonename 未設定"			
+			
+			echo "data:"
+			echo '[{"action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]' | jq
+			
 			response_create_rule=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
 				 -H "X-Auth-Email: ${auth_email}" \
 				 -H "X-Auth-Key: ${auth_key}" \
