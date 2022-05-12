@@ -46,9 +46,9 @@ declare -a arr=("srvptt.com" "srvttt.com" "yydsgo.xyz" "rpgp.cc" "mess888.com");
 			echo ${response_rule} | jq
 			
 			for rule_id in $(echo ${response_rule} | jq '.result' | jq  '.[] | .id'); do
-					echo "ruleid=$rule_id"
+					echo "ruleid=${rule_id//"/}"
 					
-					echo "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}"
+					echo "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id//"/}"
 					
 					response_delete_rule=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}" \
 						 -H "X-Auth-Email: ${auth_email}" \
