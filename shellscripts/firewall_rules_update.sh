@@ -47,7 +47,7 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 						
                         for rule_id in $(echo ${response_rule} | jq '.result' | jq  '.[] | .id'); do
                                 echo "ruleid=$rule_id"
-								response_delete_rule=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}" \
+								response_delete_rule=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id//\"/}" \
 									 -H "X-Auth-Email: ${auth_email}" \
 									 -H "X-Auth-Key: ${auth_key}" \
 									 -H "Content-Type: application/json" \
