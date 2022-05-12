@@ -20,7 +20,7 @@ declare -a arr=("srvptt.com" "srvttt.com" "yydsgo.xyz" "rpgp.cc" "mess888.com");
 
 ruleid=2298e157ea8743458590b54825ab4045
 
-url='[{"id": "${ruleid}", "'"action"'": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {36.234.19.51})","paused": false }}]'
+url='[{"id": "'"${ruleid}"'", "'"action"'": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {36.234.19.51})","paused": false }}]'
 
 
 echo ${url} | jq
@@ -30,7 +30,7 @@ response2=$(curl -X PUT "https://api.cloudflare.com/client/v4/zones/e5c37e050acb
      -H "X-Auth-Email: ${auth_email}" \
 	 -H "X-Auth-Key: ${auth_key}" \
      -H "Content-Type: application/json" \
-     --data '[{"id": "${ruleid}", "'"action"'": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {36.234.19.51})","paused": false }}]')
+     --data '[{"id": "'"${ruleid}"'", "action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {36.234.19.51})","paused": false }}]')
 
 
 echo ${response2} | jq
