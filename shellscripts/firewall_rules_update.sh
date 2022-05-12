@@ -6,7 +6,7 @@ auth_email=infrastructure@rayprosoft.com
 auth_key=ea16209785cb4fa06858c5571ff5b8057840f
 account_id=bca33f2713e936cee007fa34f24a773f
 content=ac14ad4ad050b4a71b144385e51a20f5-1241810226.ap-east-1.elb.amazonaws.com
-officeip="36.234.19.51"
+officeip=36.234.19.51
 
 response=$(curl -X GET "https://api.cloudflare.com/client/v4/zones?per_page=1000" \
     -H "X-Auth-Email: ${auth_email}" \
