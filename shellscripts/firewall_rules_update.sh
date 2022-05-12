@@ -51,7 +51,7 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 									 -H "X-Auth-Email: ${auth_email}" \
 									 -H "X-Auth-Key: ${auth_key}" \
 									 -H "Content-Type: application/json" \
-									 --data '[{"id": "\"$rule_id"\","action": "block","paused": false,"description": "Block Taiwan","filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {36.234.19.51})","paused": false }}]')
+									 --data '[{"id": "' + $rule_id +'","action": "block","paused": false,"description": "Block Taiwan","filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {36.234.19.51})","paused": false }}]')
 								echo "update result:"
 								echo ${response_update_rule} | jq
 						done
