@@ -10,13 +10,16 @@ zoneid=e5c37e050acbf7ca0de04c0b3eaec53f   #1388bet.io
 
 echo ${data} | jq
 
-response=$(curl -X GET "https://api.cloudflare.com/client/v4/zones?per_page=1000" \
-    -H "X-Auth-Email: ${auth_email}" \
-    -H "X-Auth-Key: ${auth_key}" \
-    -H "Content-Type: application/json")
-
 #echo ${response} | jq '.result'
 
+curl -X POST "https://api.cloudflare.com/client/v4/zones/e5c37e050acbf7ca0de04c0b3eaec53f/firewall/rules" \
+				 -H "X-Auth-Email: infrastructure@rayprosoft.com" \
+				 -H "X-Auth-Key: ea16209785cb4fa06858c5571ff5b8057840f" \
+				 -H "Content-Type: application/json" \
+				 --data '[{"action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {36.234.19.51})","paused": false }}]'
+				 
+				 
+				 
 declare -i index=0
 declare -a arr=("srvptt.com" "srvttt.com" "yydsgo.xyz" "rpgp.cc" "mess888.com");
 
