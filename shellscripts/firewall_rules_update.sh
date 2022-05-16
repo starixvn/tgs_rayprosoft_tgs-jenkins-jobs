@@ -8,6 +8,31 @@ account_id=bca33f2713e936cee007fa34f24a773f
 content=ac14ad4ad050b4a71b144385e51a20f5-1241810226.ap-east-1.elb.amazonaws.com
 officeip=220.132.206.70
 
+
+DeleteFilters(){
+	zone_id=$1
+	zone_name=$2
+	result=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/$1/filters" \
+		 -H "X-Auth-Email: ${auth_email}" \
+		 -H "X-Auth-Key: ${auth_key}" \
+		 -H "Content-Type: application/json")
+
+	IFS=''
+	filters=$(echo ${result} | jq '.result' | jq '.[] .id')
+	
+	for filter_id in $(echo ${result} | jq '.result' | jq  '.[] | .id'); do
+			echo "ruleid=${rule_id//\"/}"
+			respons_delete_filter=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/filters/id=${filter_id//\"/}" \
+				 -H "X-Auth-Email: ${auth_email}" \
+				 -H "X-Auth-Key: ${auth_key}" \
+				 -H "Content-Type: application/json")
+			echo "delete result:"
+			echo ${respons_delete_filter} | jq
+	done
+	
+	echo "DeleteFilters: ${zone_name}"
+}
+
 response=$(curl -X GET "https://api.cloudflare.com/client/v4/zones?per_page=1000" \
     -H "X-Auth-Email: ${auth_email}" \
     -H "X-Auth-Key: ${auth_key}" \
@@ -55,7 +80,9 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 								echo "delete result:"
 								echo ${response_delete_rule} | jq
 						done
-								
+						
+						DeleteFilters ${zoneid} ${zonename}
+						
 						response_create_rule=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
 							 -H "X-Auth-Email: ${auth_email}" \
 							 -H "X-Auth-Key: ${auth_key}" \

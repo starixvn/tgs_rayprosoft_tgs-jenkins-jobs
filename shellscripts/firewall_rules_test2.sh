@@ -5,12 +5,36 @@ auth_email=infrastructure@rayprosoft.com
 auth_key=ea16209785cb4fa06858c5571ff5b8057840f
 account_id=bca33f2713e936cee007fa34f24a773f
 content=ac14ad4ad050b4a71b144385e51a20f5-1241810226.ap-east-1.elb.amazonaws.com
-officeip=36.234.19.51
+officeip=220.132.206.70
 zoneid=e5c37e050acbf7ca0de04c0b3eaec53f   #1388bet.io
 
 echo ${data} | jq
 {response} | jq '.result'		 
-				 
+
+DeleteFilters(){
+	zone_id=$1
+	zone_name=$2
+	result=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/$1/filters" \
+		 -H "X-Auth-Email: ${auth_email}" \
+		 -H "X-Auth-Key: ${auth_key}" \
+		 -H "Content-Type: application/json")
+
+	IFS=''
+	filters=$(echo ${result} | jq '.result' | jq '.[] .id')
+	
+	for filter_id in $(echo ${result} | jq '.result' | jq  '.[] | .id'); do
+			echo "ruleid=${rule_id//\"/}"
+			respons_delete_filter=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/filters/id=${filter_id//\"/}" \
+				 -H "X-Auth-Email: ${auth_email}" \
+				 -H "X-Auth-Key: ${auth_key}" \
+				 -H "Content-Type: application/json")
+			echo "delete result:"
+			echo ${respons_delete_filter} | jq
+	done
+	
+	echo "DeleteFilters: ${zone_name}"
+}
+
 				 
 declare -i index=0
 declare -a arr=("srvptt.com" "srvttt.com" "yydsgo.xyz" "rpgp.cc" "mess888.com");
