@@ -93,6 +93,5 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 						echo "create result:"
                         echo ${response_create_rule} | jq
                 fi
-				break;
         fi
 done
