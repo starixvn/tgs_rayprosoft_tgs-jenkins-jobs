@@ -12,12 +12,12 @@ officeip=220.132.206.70
 DeleteFilters(){
 	zone_id=$1
 	zone_name=$2
-	result=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/$1/filters" \
+	result=$(curl -X GET "https://api.cloudflare.com/client/v4/zones/$1/filters" \
 		 -H "X-Auth-Email: ${auth_email}" \
 		 -H "X-Auth-Key: ${auth_key}" \
 		 -H "Content-Type: application/json")
 	
-	echo ${result} | jq
+	echo ${result}
 	
 	IFS=''
 	filters=$(echo ${result} | jq '.result' | jq '.[] .id')
