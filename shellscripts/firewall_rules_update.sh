@@ -20,11 +20,11 @@ DeleteFilters(){
 	echo ${result}
 	
 	IFS=''
-	filters=$(echo ${result} | jq '.result' | jq '.[] .id')
+	filters=$(echo ${result} | jq '.result' | jq -r '.[] .id')
 	
 	echo "filters=${filters}"
 	
-	for filter_id in $(echo ${result} | jq '.result' | jq  '.[] | .id'); do
+	for filter_id in $(echo ${result} | jq '.result' | jq -r '.[] | .id'); do
 			echo "filter_id=${filter_id//\"/}"
 			echo "https://api.cloudflare.com/client/v4/zones/${zoneid}/filters?id=${filter_id//\"/}"
 			
