@@ -16,7 +16,7 @@ DeleteFilters(){
 		 -H "X-Auth-Email: ${auth_email}" \
 		 -H "X-Auth-Key: ${auth_key}" \
 		 -H "Content-Type: application/json" | jq  -r '.result' | jq -r '.[] | .id')
-	
+	echo "result:${result}"
 	for filter_id in ${result}; do
 
 			respons_delete_filter=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/filters?id=${filter_id}" \
