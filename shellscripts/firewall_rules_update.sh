@@ -19,8 +19,10 @@ DeleteFilters(){
 	
 	echo ${result}
 	
-	IFS='\n'
+	IFS=''
 	filters=$(echo ${result} | jq '.result' | jq '.[] .id')
+	
+	echo "filters=${filters}"
 	
 	for filter_id in $(echo ${result} | jq '.result' | jq  '.[] | .id'); do
 			echo "filter_id=${filter_id//\"/}"
