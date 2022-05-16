@@ -16,7 +16,9 @@ DeleteFilters(){
 		 -H "X-Auth-Email: ${auth_email}" \
 		 -H "X-Auth-Key: ${auth_key}" \
 		 -H "Content-Type: application/json")
-
+	
+	echo ${result} | jq
+	
 	IFS=''
 	filters=$(echo ${result} | jq '.result' | jq '.[] .id')
 	
