@@ -26,9 +26,13 @@ DeleteFilters(){
 	
 	for filter_id in $(echo ${result} | jq '.result' | jq -r '.[] | .id'); do
 			echo "filter_id=${filter_id//\"/}"
+			
+			filter_id=${filter_id//\"/}
+			filter_id= $(echo ${filter_id} )
+			
 			echo "https://api.cloudflare.com/client/v4/zones/${zoneid}/filters?id=${filter_id//\"/}"
 			
-			respons_delete_filter=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/filters?id=${filter_id//\"/}" \
+			respons_delete_filter=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/filters?id=${filter_id}" \
 				 -H "X-Auth-Email: ${auth_email}" \
 				 -H "X-Auth-Key: ${auth_key}" \
 				 -H "Content-Type: application/json")
@@ -57,9 +61,11 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
         zonename=${zone_array[1]/\"}
         echo "${zonename}=${zoneid}"
 
-		DeleteFilters ${zoneid} ${zonename}
+        #if [[ ! ${arr[*]} =~ "${zonename}" ]]; then
+		if [[ "21gen.com" == "${zonename}" ]]; then
+				
+				DeleteFilters ${zoneid} ${zonename}
 		
-        if [[ ! ${arr[*]} =~ "${zonename}" ]]; then
                 response_rule=$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules?page=1&per_page=20" \
                          -H "X-Auth-Email: ${auth_email}" \
                          -H "X-Auth-Key: ${auth_key}" \
@@ -97,5 +103,6 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 						echo "create result:"
                         echo ${response_create_rule} | jq
                 fi
+				break;
         fi
 done
