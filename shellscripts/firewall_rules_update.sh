@@ -23,7 +23,9 @@ DeleteFilters(){
 	filters=$(echo ${result} | jq '.result' | jq '.[] .id')
 	
 	for filter_id in $(echo ${result} | jq '.result' | jq  '.[] | .id'); do
-			echo "ruleid=${rule_id//\"/}"
+			echo "filter_id=${filter_id//\"/}"
+			echo "https://api.cloudflare.com/client/v4/zones/${zoneid}/filters?id=${filter_id//\"/}"
+			
 			respons_delete_filter=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/filters?id=${filter_id//\"/}" \
 				 -H "X-Auth-Email: ${auth_email}" \
 				 -H "X-Auth-Key: ${auth_key}" \
