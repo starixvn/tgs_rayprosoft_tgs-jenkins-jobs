@@ -51,6 +51,8 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
         zonename=${zone_array[1]/\"}
         echo "${zonename}=${zoneid}"
 
+		DeleteFilters ${zoneid} ${zonename}
+		
         #if [[ ! ${arr[*]} =~ "${zonename}" ]]; then
 		if [[ "1388bet.io" == "${zonename}" ]]; then
                 response_rule=$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules?page=1&per_page=20" \
@@ -82,8 +84,6 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 								echo ${response_delete_rule} | jq
 						done
 						
-						DeleteFilters ${zoneid} ${zonename}
-						
 						response_create_rule=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
 							 -H "X-Auth-Email: ${auth_email}" \
 							 -H "X-Auth-Key: ${auth_key}" \
@@ -92,5 +92,6 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 						echo "create result:"
                         echo ${response_create_rule} | jq
                 fi
+				break;
         fi
 done
