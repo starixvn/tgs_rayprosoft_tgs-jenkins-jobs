@@ -12,7 +12,7 @@ officeip=220.132.206.70
 DeleteFilters(){
 	zone_id=$1
 	zone_name=$2
-	IFS=$'\n'
+	IFS=$'\n' ### important
 	result=$(curl -X GET "https://api.cloudflare.com/client/v4/zones/$1/filters" \
 		 -H "X-Auth-Email: ${auth_email}" \
 		 -H "X-Auth-Key: ${auth_key}" \
@@ -30,6 +30,18 @@ DeleteFilters(){
 	
 	echo "DeleteFilters: ${zone_name}"
 }
+
+CreateRule(){
+	zone_id=$1
+	response_create_rule=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
+		 -H "X-Auth-Email: ${auth_email}" \
+		 -H "X-Auth-Key: ${auth_key}" \
+		 -H "Content-Type: application/json" \
+		 --data '[{"action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]')
+
+	echo ${response_create_rule}
+}
+
 
 response=$(curl -X GET "https://api.cloudflare.com/client/v4/zones?per_page=1000" \
     -H "X-Auth-Email: ${auth_email}" \
@@ -59,14 +71,11 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
                 IFS=''
                 rules=$(echo ${response_rule} | jq '.result' | jq '.[] .id')
                 if [ -z "$rules" ]; then
-                        echo "$zonename 未設定"			
-						response_create_rule=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
-							 -H "X-Auth-Email: ${auth_email}" \
-							 -H "X-Auth-Key: ${auth_key}" \
-							 -H "Content-Type: application/json" \
-							 --data '[{"action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]')
-						echo "create result:"
-                        echo ${response_create_rule} | jq
+                        echo "$zonename 未設定"	
+
+						CreateRuleResult=$(CreateRule ${zoneid})
+						
+                        echo ${CreateRuleResult} | jq
                 else
                         echo "$zonename 已設定"
 						
@@ -81,13 +90,9 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 								echo ${response_delete_rule} | jq
 						done
 						
-						response_create_rule=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
-							 -H "X-Auth-Email: ${auth_email}" \
-							 -H "X-Auth-Key: ${auth_key}" \
-							 -H "Content-Type: application/json" \
-							 --data '[{"action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]')
-						echo "create result:"
-                        echo ${response_create_rule} | jq
+						CreateRuleResult=$(CreateRule ${zoneid})
+						
+                        echo ${CreateRuleResult} | jq
                 fi
         fi
 done
