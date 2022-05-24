@@ -28,7 +28,8 @@ data:
       },
       "ConnectionStrings": {
         "Tgs": "{{ .Values.connectionStrings.tgs }}",
-        "RedisConfigurationString": "{{ .Values.connectionStrings.redis }}"
+        "RedisConfigurationString": "{{ .Values.connectionStrings.redis }}",
+        "MongoDBMessagingConnectionString": "{{ .Values.connectionStrings.mongo }}"
       },
       "TCGFtpApi": {
         "Url": "http://game-tcg-ftp"
