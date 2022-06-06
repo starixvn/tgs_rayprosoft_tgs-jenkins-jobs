@@ -28,7 +28,8 @@ data:
       },
       "ConnectionStrings": {
         "Tgs": "{{ .Values.connectionStrings.tgs }}",
-        "RedisConfigurationString": "{{ .Values.connectionStrings.redis }}"
+        "RedisConfigurationString": "{{ .Values.connectionStrings.redis }}",
+        "MongoDBMessagingConnectionString": "{{ .Values.connectionStrings.mongo }}"
       },
       "NatsSetting": {
         "Urls": "{{ .Values.connectionStrings.nats }}",

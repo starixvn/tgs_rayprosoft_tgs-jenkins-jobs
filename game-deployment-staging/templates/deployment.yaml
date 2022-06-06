@@ -73,6 +73,10 @@ spec:
               name: appsettings
               readOnly: true
               subPath: appsettings.json
+            - mountPath: /etc/ssl/certs/rds-combined-ca-bundle.pem
+              name: rds-combined-ca-bundle
+              readOnly: true
+              subPath: rds-combined-ca-bundle.pem
           livenessProbe:
             tcpSocket:
               port: 80
@@ -89,4 +93,11 @@ spec:
         - name: appsettings
           configMap:
             name: configmap-{{ .Values.gpName }}
+        - name: rds-combined-ca-bundle
+          secret:
+            secretName: rds-combined-ca-bundle
+        - name: diagvol
+          emptyDir: {}
+        - name: dumpsvol
+          emptyDir: {}
 {{- end }}
