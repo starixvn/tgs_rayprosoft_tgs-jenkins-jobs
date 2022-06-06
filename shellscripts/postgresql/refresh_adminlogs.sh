@@ -1,6 +1,7 @@
+#!/bin/bash
 export PGPASSWORD='wXfrQBjK4XYFY3KH6D2D'
-export PGHOST='db-production.cglu874fh5rb.ap-east-1.rds.amazonaws.com'
-export PGPORT='5432'
+export PGHOST='16.162.237.128'
+export PGPORT='5433'
 export PGUSER='postgres'
 
 result=$(psql -d $1 -c "select count(1) from log.admin_logs where recorded_on >= CURRENT_TIMESTAMP - interval '$3 minutes'")

@@ -63,7 +63,7 @@ for svc in ${all_svc} ; do
 
                         echo -n -e ${result1} ${result2}
 
-			if [[ ${result1} == 200 ]] ||  [[ ${result2} == 200 ]]  ; then
+			if [[ ${result1} == 200 ]] ||  [[ ${result2} == 200 ]] ||  [[ ${result1} == 000 ]] ||  [[ ${result2} == 000 ]]  ; then
                                 echo -n -e "\e[42m      \e[49m"
                         else
                                 echo -n -e "\e[41m      \e[49m"
@@ -74,7 +74,7 @@ for svc in ${all_svc} ; do
 		result=$(kubectl -n default exec ${debug} -- nc -w 2 -v ${svcname}.${TGSENV}  ${svcport}  </dev/null; echo $?)
    	        echo -n -e "result:${result}=="
 
-		if [[ ${result} == 0 ]] || [[ ${result} = "INFO2"*  ]]  ; then
+		if [[ ${result} == 0 ]] || [[ ${result} = "INFO"*  ]]  ; then
                  	echo -n -e "\e[42m      \e[49m"
                 else
                         echo -n -e "\e[41m      \e[49m"
