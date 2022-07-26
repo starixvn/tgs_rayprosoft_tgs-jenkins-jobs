@@ -21,12 +21,20 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
     zonename=${zone_array[1]/\"}
 	echo "${zonename}=${zoneid}"
 	
-	if [[ "${zonename}" == *"$1"* ]]; then
-		response_purge=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/purge_cache" \
-			 -H "X-Auth-Email: ${auth_email}" \
-			 -H "X-Auth-Key: ${auth_key}" \
-			 -H "Content-Type: application/json" \
-			 --data '{"purge_everything":true}')
-		echo ${response_purge}
-	fi
+	IFS=' '
+	read -a domain_array <<< "$@"
+
+	for i in "${domain_array[@]}"
+	do
+			echo "$i"
+			if [[ "${zonename}" == *"$i"* ]]; then
+					echo "purge ${zonename}"
+					response_purge=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/purge_cache" \
+							 -H "X-Auth-Email: ${auth_email}" \
+							 -H "X-Auth-Key: ${auth_key}" \
+							 -H "Content-Type: application/json" \
+							 --data '{"purge_everything":true}')
+					echo ${response_purge}
+			fi
+	done
 done
