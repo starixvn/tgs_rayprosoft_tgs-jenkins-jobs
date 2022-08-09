@@ -1,0 +1,60 @@
+@Library('global-shared-library') _
+def message = ""
+
+pipeline {
+    agent any
+	
+    stages {
+        
+        stage('Clear') {
+			steps {
+				cleanWs()
+			}
+		}
+		
+        stage('Clone jenkins jobs') {
+			steps {
+			    git branch: 'main', url: 'https://gitlab.com/rayprosoft/tgs-jenkins-jobs.git' , credentialsId: 'gitlab-user-pwd'
+			}
+		}
+		
+        stage('Get metrics'){
+            steps {
+                script {
+                    withKubeConfig([credentialsId: 'stag-k8s-config']) {
+                        
+                        minReplicas=sh(
+                            script: 'kubectl get hpa game-gamerecord-awc-workservice -n prod -o jsonpath=\'{.spec.minReplicas}\'',
+                            returnStdout: true).trim()  as Integer;
+                        
+                        echo "minReplicas=${minReplicas}"
+                        
+                        metrics=sh(
+                            script: 'aws cloudwatch get-metric-statistics --namespace AWS/DocDB --dimensions Name=DBInstanceIdentifier,Value=tgs-prod --metric-name CPUUtilization --start-time $(date -d \'20 minutes ago\' -u +"%Y-%m-%dT%H:%M:%SZ") --end-time $(date -u +"%Y-%m-%dT%H:%M:%SZ") --period 1200 --statistics Maximum --region ap-northeast-1 | grep Max',
+                            returnStdout: true).trim();
+                        
+                        Float cpuValue=metrics.replace("\"Maximum\":","").replace(":","").replace(",","")
+                        echo "cpuValue=${cpuValue}"
+                        
+                        if (cpuValue > 85 && minReplicas <= 5)
+                        {
+                            echo "ready to enlarge";
+                            sh 'helm template -n prod workservice-autoscaling/workservice-autoscaling --set autoscaling.enabled=true --set autoscaling.minReplicas=10  --set autoscaling.maxReplicas=20'
+                            sh 'helm template -n prod workservice-autoscaling/workservice-autoscaling --set autoscaling.enabled=true --set autoscaling.minReplicas=10  --set autoscaling.maxReplicas=20 | kubectl apply -f -'
+                        } 
+                        else if (cpuValue < 85 && minReplicas >= 10)
+                        {
+                            echo "ready to shrink";
+                            sh 'helm template -n prod workservice-autoscaling/workservice-autoscaling --set autoscaling.enabled=true --set autoscaling.minReplicas=5  --set autoscaling.maxReplicas=10'
+                            sh 'helm template -n prod workservice-autoscaling/workservice-autoscaling --set autoscaling.enabled=true --set autoscaling.minReplicas=5  --set autoscaling.maxReplicas=10 | kubectl apply -f -'
+                        }
+                        else
+                        {
+                            echo "no change";
+                        }
+                    }
+                }
+            }
+        }
+	}
+}
