@@ -1,0 +1,34 @@
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: game-gamerecord-jili-workservice
+  labels:
+    helm.sh/chart: game-gamerecord-jili-workservice-0.1.0
+    app.kubernetes.io/name: game-gamerecord-jili-workservice
+    app: game-gamerecord-jili-workservice
+    app.kubernetes.io/instance: RELEASE-NAME
+    tgs.kind: game
+    tgs.game.kind: gamerecord
+    tgs.gameprovider.kind: jili
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: game-gamerecord-jili-workservice
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
