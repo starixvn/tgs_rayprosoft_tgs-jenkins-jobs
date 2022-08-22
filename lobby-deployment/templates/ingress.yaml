@@ -29,6 +29,13 @@ spec:
             port: 
               number: 80
       - pathType: Prefix
+        path: /api/brand/maintenance
+        backend:
+          service:
+            name: brand-api
+            port: 
+              number: 80
+      - pathType: Prefix
         path: /api
         backend:
           service:
