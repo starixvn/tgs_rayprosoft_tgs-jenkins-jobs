@@ -51,7 +51,7 @@ response=$(curl -X GET "https://api.cloudflare.com/client/v4/zones?per_page=1000
 #echo ${response} | jq '.result'
 
 declare -i index=0
-declare -a arr=("srvptt.com" "srvttt.com" "yydsgo.xyz" "rpgp.cc" "mess888.com");
+declare -a arr=("atinbet.vip" "atinbet.club" "atinbet.app" "atinbet.net" "atinbet.org" "atingbet.com");
 
 # FOR PURGE
 for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
