@@ -17,7 +17,18 @@ CreateDnsRecord(){
 	echo "CreateDnsRecord: ${result}"
 }
 
-declare -a arr=("pinasbet.vip" "pinasbet.net" "pinasbet.org" "pinasbet.co" "pbslots.com" "pbslots.net" "pbslots.org" "pbslots.co" "pbslots.vip");
+CreateRule(){
+	zone_id=$1
+	response_create_rule=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
+		 -H "X-Auth-Email: ${auth_email}" \
+		 -H "X-Auth-Key: ${auth_key}" \
+		 -H "Content-Type: application/json" \
+		 --data '[{"action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]')
+
+	echo ${response_create_rule}
+}
+
+declare -a arr=("atinbet.vip" "atinbet.club" "atinbet.app" "atinbet.net" "atinbet.org" "atingbet.com");
 
 response=$(curl -X GET "https://api.cloudflare.com/client/v4/zones?per_page=1000" \
     -H "X-Auth-Email: ${auth_email}" \
@@ -132,4 +143,20 @@ for zone in "${arr[@]}"; do
 	dns_record_result=$(CreateDnsRecord "www" ${zoneid})
 	echo "dns_record_result:"
 	echo ${dns_record_result}
+	
+	# FOR DELETE FIREWALL RULES
+	for rule_id in $(echo ${response_rule} | jq '.result' | jq  '.[] | .id'); do
+			echo "ruleid=${rule_id//\"/}"
+			response_delete_rule=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id//\"/}" \
+				 -H "X-Auth-Email: ${auth_email}" \
+				 -H "X-Auth-Key: ${auth_key}" \
+				 -H "Content-Type: application/json" \
+				 --data '{}')
+			echo "delete result:"
+			echo ${response_delete_rule} | jq
+	done
+	
+	CreateRuleResult=$(CreateRule ${zoneid})
+	
+	echo ${CreateRuleResult} | jq
 done
