@@ -12,6 +12,7 @@ image:
 
 imagePullSecrets:
   - name: registry-credentials
+  - name: dockerhub
 
 podAnnotations: {}
 
