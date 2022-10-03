@@ -27,7 +27,7 @@ CreateADnsRecord(){
              -H "X-Auth-Email: ${auth_email}" \
              -H "X-Auth-Key: ${auth_key}" \
              -H "Content-Type: application/json" \
-             --data '{"type":"A","name":"'$1'","content":"'${content}'","proxied":true}')
+             --data '{"type":"A","name":"'$1'","content":"'${officeip}'","proxied":true}')
 
 	echo "CreateDnsRecord: ${result}"
 }
