@@ -10,7 +10,7 @@ CreateCNameDnsRecord(){
         dns_record=$1
         zone_id=$rpgp_cc_zone_id
 
-        result=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/$2/dns_records" \
+        result=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records" \
              -H "X-Auth-Email: ${auth_email}" \
              -H "X-Auth-Key: ${auth_key}" \
              -H "Content-Type: application/json" \
@@ -23,7 +23,7 @@ CreateADnsRecord(){
         dns_record=$1
         zone_id=$rpgp_cc_zone_id
 
-        result=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/$2/dns_records" \
+        result=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records" \
              -H "X-Auth-Email: ${auth_email}" \
              -H "X-Auth-Key: ${auth_key}" \
              -H "Content-Type: application/json" \
