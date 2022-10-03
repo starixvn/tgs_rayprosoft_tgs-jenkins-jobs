@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Values.lobbyName }}
-  namespace: staging
+  name: {{ .Values.serviceName }}
+  namespace: {{ .Values.tgsenv }}
 spec:
   ingressClassName: nginx
   rules:
@@ -13,6 +13,6 @@ spec:
         path: /
         backend:
           service:
-            name: {{ .Values.lobbyName }}
+            name: {{ .Values.serviceName }}
             port: 
               number: 80
