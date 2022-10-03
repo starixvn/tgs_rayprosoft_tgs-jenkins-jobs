@@ -7,7 +7,7 @@ auth_key=ea16209785cb4fa06858c5571ff5b8057840f
 account_id=bca33f2713e936cee007fa34f24a773f
 content=ac14ad4ad050b4a71b144385e51a20f5-1241810226.ap-east-1.elb.amazonaws.com
 officeip=220.132.206.70
-
+officeip2=114.33.41.237
 
 DeleteFilters(){
 	zone_id=$1
@@ -41,6 +41,18 @@ CreateRule(){
 
 	echo ${response_create_rule}
 }
+
+UpdateRule(){
+	zone_id=$1
+	response_create_rule=$(curl -X PUT "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
+		 -H "X-Auth-Email: ${auth_email}" \
+		 -H "X-Auth-Key: ${auth_key}" \
+		 -H "Content-Type: application/json" \
+		 --data '[{"id": "${2}","action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"' '"${officeip2}"'})","paused": false }}]')
+
+	echo ${response_create_rule}
+}
+
 
 
 response=$(curl -X GET "https://api.cloudflare.com/client/v4/zones?per_page=1000" \
@@ -79,20 +91,34 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
                 else
                         echo "$zonename 已設定"
 						
-                        for rule_id in $(echo ${response_rule} | jq '.result' | jq  '.[] | .id'); do
-                                echo "ruleid=${rule_id//\"/}"
-								response_delete_rule=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id//\"/}" \
+                        for rule in $(echo ${response_rule} | jq '.result' | jq  '.[] | .id+","+.description'); do
+						        IFS=','
+								read -a zone_array <<< ${rule}
+								ruleid=${zone_array[0]/\"}
+								desc=${zone_array[1]/\"}
+								
+                                echo "ruleid=${ruleid//\"/}"
+								echo "desc=${desc}"
+								
+								if [[ ${desc} == "Bolck Taiwan" ]]; then 
+								    echo "Executing"
+									UpdateRuleResult=$(UpdateRule ${zoneid})
+									echo ${UpdateRuleResult} | jq
+								fi
+														
+								
+								#response_delete_rule=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id//\"/}" \
 									 -H "X-Auth-Email: ${auth_email}" \
 									 -H "X-Auth-Key: ${auth_key}" \
 									 -H "Content-Type: application/json" \
 									 --data '{}')
-								echo "delete result:"
-								echo ${response_delete_rule} | jq
+								#echo "delete result:"
+								#echo ${response_delete_rule} | jq
 						done
 						
-						CreateRuleResult=$(CreateRule ${zoneid})
+						#CreateRuleResult=$(CreateRule ${zoneid})
 						
-                        echo ${CreateRuleResult} | jq
+                        #echo ${CreateRuleResult} | jq
                 fi
         fi
 done
