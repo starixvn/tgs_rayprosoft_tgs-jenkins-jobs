@@ -43,11 +43,13 @@ CreateRule(){
 
 UpdateRule(){
 	zone_id=$1
-	response_create_rule=$(curl -X PUT "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
+	rule_id=$1
+	filter_od=$3
+	response_create_rule=$(curl -X PUT "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}" \
 		 -H "X-Auth-Email: ${auth_email}" \
 		 -H "X-Auth-Key: ${auth_key}" \
 		 -H "Content-Type: application/json" \
-		 --data '[{"id": "$2","action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]')
+		 --data '[{"id": "$3","action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]')
 
 	echo ${response_create_rule}
 }
@@ -96,18 +98,20 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
                 else
                         echo "$zonename 已設定"
 						
-                        for rule in $(echo ${response_rule} | jq '.result' | jq  '.[] | .id+","+.description'); do
+                        for rule in $(echo ${response_rule} | jq '.result' | jq  '.[] | .id+","+.description+","+.filter.id'); do
 						        IFS=','
 								read -a zone_array <<< ${rule}
-								ruleid=${zone_array[0]/\"}
+								rule_id=${zone_array[0]/\"}
 								desc=${zone_array[1]/\"}
+								filter_id=${zone_array[3]/\"}
 								
-                                echo "ruleid=${ruleid//\"/}"
+                                echo "rule_id=${rule_id//\"/}"
 								echo "desc=${desc}"
+								echo "filter_id=${filter_id}"
 								
 								if [[ ${desc} == "Block Taiwan" ]]; then 
 								    echo "Executing"
-									UpdateRuleResult=$(UpdateRule ${zoneid} ${ruleid})
+									UpdateRuleResult=$(UpdateRule ${zoneid} ${rule_id} ${filter_id})
 									echo ${UpdateRuleResult} | jq
 								fi
 														
