@@ -81,6 +81,10 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
                          -H "X-Auth-Email: ${auth_email}" \
                          -H "X-Auth-Key: ${auth_key}" \
                          -H "Content-Type: application/json")
+						 
+				echo "rule response:"		 
+				echo ${response_rule} | jq
+				
                 IFS=''
                 rules=$(echo ${response_rule} | jq '.result' | jq '.[] .id')
                 if [ -z "$rules" ]; then
