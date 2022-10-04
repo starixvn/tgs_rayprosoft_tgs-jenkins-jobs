@@ -117,6 +117,11 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 								if [[ ${desc} == "Block Taiwan" ]]; then 
 								    echo "Executing"					
 									#UpdateRuleResult=$(UpdateRule ${zoneid} ${rule_id} ${filter_id})
+									
+									echo "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}"
+
+									echo '{"id": "'${rule_id}'","action": "block","paused": false,"description": "Block Taiwan", "filter":{"id":"'${filter_id}'","expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}' | jq
+
 									response_update_rule=$(curl -X PUT "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}" \
 																	 -H "X-Auth-Email: ${auth_email}" \
 																	 -H "X-Auth-Key: ${auth_key}" \
