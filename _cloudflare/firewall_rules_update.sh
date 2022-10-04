@@ -70,7 +70,7 @@ response=$(curl -X GET "https://api.cloudflare.com/client/v4/zones?per_page=1000
 
 declare -i index=0
 #declare -a arr=("atinbet.vip" "atinbet.club" "atinbet.app" "atinbet.net" "atinbet.org" "atingbet.com");
-declare -a arr=("0063po.com");
+declare -a arr=("mclub001.com");
 
 
 # FOR PURGE
