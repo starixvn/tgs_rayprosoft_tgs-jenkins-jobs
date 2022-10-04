@@ -50,13 +50,13 @@ UpdateRule(){
 	#echo "test1:" 
 	#echo "test1" | jq
 	
-	response_create_rule=$(curl -X PUT "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}" \
-		 -H "X-Auth-Email: ${auth_email}" \
-		 -H "X-Auth-Key: ${auth_key}" \
-		 -H "Content-Type: application/json" \
-		 --data '{"id": "'${rule_id}'","action": "block","paused": false,"description": "Block Taiwan", "filter":{"id":"'${filter_id}'","expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}')
+	response_update_rule=$(curl -X PUT "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}" \
+                                 -H "X-Auth-Email: ${auth_email}" \
+                                 -H "X-Auth-Key: ${auth_key}" \
+                                 -H "Content-Type: application/json" \
+                                 --data '{"id": "'${rule_id}'","action": "block","paused": false,"description": "Block Taiwan", "filter":{"id":"'${filter_id}'","expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}')
 
-	echo ${response_create_rule}
+	echo ${response_update_rule}
 }
 
 
