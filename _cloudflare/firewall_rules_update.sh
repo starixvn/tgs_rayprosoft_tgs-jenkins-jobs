@@ -109,9 +109,9 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 														
 								
 								#response_delete_rule=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id//\"/}" \
-									 -H "X-Auth-Email: ${auth_email}" \
-									 -H "X-Auth-Key: ${auth_key}" \
-									 -H "Content-Type: application/json" \
+									# -H "X-Auth-Email: ${auth_email}" \
+									# -H "X-Auth-Key: ${auth_key}" \
+									# -H "Content-Type: application/json" \
 									 #--data '{}')
 								#echo "delete result:"
 								#echo ${response_delete_rule} | jq
