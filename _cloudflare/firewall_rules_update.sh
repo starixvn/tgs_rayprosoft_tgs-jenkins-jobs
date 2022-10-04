@@ -45,6 +45,11 @@ UpdateRule(){
 	zone_id=$1
 	rule_id=$1
 	filter_id=$3
+	
+	test1 ='[{"id": \""$rule_id"\","action": "block","paused": false,"description": "Block Taiwan", "filter":{"id":\""${filter_id}"\","expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]'
+	
+	echo "test1:" + test1
+	
 	response_create_rule=$(curl -X PUT "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}" \
 		 -H "X-Auth-Email: ${auth_email}" \
 		 -H "X-Auth-Key: ${auth_key}" \
