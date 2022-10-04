@@ -103,7 +103,7 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 								read -a zone_array <<< ${rule}
 								rule_id=${zone_array[0]/\"}
 								desc=${zone_array[1]/\"}
-								filter_id=${zone_array[3]/\"}
+								filter_id=${zone_array[2]/\"}
 								
                                 echo "rule_id=${rule_id//\"/}"
 								echo "desc=${desc}"
