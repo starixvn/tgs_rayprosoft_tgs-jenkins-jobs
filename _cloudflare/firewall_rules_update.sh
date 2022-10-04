@@ -103,7 +103,7 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 								
 								if [[ ${desc} == "Block Taiwan" ]]; then 
 								    echo "Executing"
-									UpdateRuleResult=$(UpdateRule ${zoneid})
+									UpdateRuleResult=$(UpdateRule ${zoneid} ${ruleid})
 									echo ${UpdateRuleResult} | jq
 								fi
 														
