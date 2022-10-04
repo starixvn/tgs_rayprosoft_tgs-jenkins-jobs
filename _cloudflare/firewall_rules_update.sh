@@ -75,7 +75,7 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
         echo "${zonename}=${zoneid}"
 
         if [[ ${arr[*]} =~ "${zonename}" ]]; then
-				DeleteFilters ${zoneid} ${zonename}
+				#DeleteFilters ${zoneid} ${zonename}
 		
                 response_rule=$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules?page=1&per_page=20" \
                          -H "X-Auth-Email: ${auth_email}" \
