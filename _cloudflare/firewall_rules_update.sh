@@ -6,8 +6,7 @@ auth_email=infrastructure@rayprosoft.com
 auth_key=ea16209785cb4fa06858c5571ff5b8057840f
 account_id=bca33f2713e936cee007fa34f24a773f
 content=ac14ad4ad050b4a71b144385e51a20f5-1241810226.ap-east-1.elb.amazonaws.com
-officeip=220.132.206.70
-officeip2=114.33.41.237
+officeip=114.33.41.237
 
 DeleteFilters(){
 	zone_id=$1
@@ -48,7 +47,7 @@ UpdateRule(){
 		 -H "X-Auth-Email: ${auth_email}" \
 		 -H "X-Auth-Key: ${auth_key}" \
 		 -H "Content-Type: application/json" \
-		 --data '[{"id": "${2}","action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"' '"${officeip2}"'})","paused": false }}]')
+		 --data '[{"id": "${2}","action": "block","paused": false,"description": "Block Taiwan", "filter":{"expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]')
 
 	echo ${response_create_rule}
 }
@@ -63,7 +62,9 @@ response=$(curl -X GET "https://api.cloudflare.com/client/v4/zones?per_page=1000
 #echo ${response} | jq '.result'
 
 declare -i index=0
-declare -a arr=("atinbet.vip" "atinbet.club" "atinbet.app" "atinbet.net" "atinbet.org" "atingbet.com");
+#declare -a arr=("atinbet.vip" "atinbet.club" "atinbet.app" "atinbet.net" "atinbet.org" "atingbet.com");
+declare -a arr=("0063po.com");
+
 
 # FOR PURGE
 for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
