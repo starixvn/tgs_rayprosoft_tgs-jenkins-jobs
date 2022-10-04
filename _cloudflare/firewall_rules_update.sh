@@ -49,7 +49,7 @@ UpdateRule(){
 		 -H "X-Auth-Email: ${auth_email}" \
 		 -H "X-Auth-Key: ${auth_key}" \
 		 -H "Content-Type: application/json" \
-		 --data '[{"id": "$rule_id","action": "block","paused": false,"description": "Block Taiwan", "filter":{"id":"${filter_id}","expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]')
+		 --data '[{"id": \""$rule_id"\","action": "block","paused": false,"description": "Block Taiwan", "filter":{"id":\""${filter_id}"\","expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]')
 
 	echo ${response_create_rule}
 }
