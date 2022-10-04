@@ -83,7 +83,7 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
                          -H "Content-Type: application/json")
 						 
 				echo "rule response:"		 
-				echo ${response_rule} | jq
+				echo ${response_rule}
 				
                 IFS=''
                 rules=$(echo ${response_rule} | jq '.result' | jq '.[] .id')
