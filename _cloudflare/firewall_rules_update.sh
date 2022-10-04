@@ -54,7 +54,7 @@ UpdateRule(){
 		 -H "X-Auth-Email: ${auth_email}" \
 		 -H "X-Auth-Key: ${auth_key}" \
 		 -H "Content-Type: application/json" \
-		 --data '[{"id": "'"$rule_id"'","action": "block","paused": false,"description": "Block Taiwan", "filter":{"id":"'"${filter_id}"'","expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]')
+		 --data '{"id": "'"$rule_id"'","action": "block","paused": false,"description": "Block Taiwan", "filter":{"id":"'"${filter_id}"'","expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}')
 
 	echo ${response_create_rule}
 }
@@ -116,15 +116,10 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 								
 								if [[ ${desc} == "Block Taiwan" ]]; then 
 								    echo "Executing"
-									#UpdateRuleResult=$(UpdateRule ${zoneid} ${rule_id} ${filter_id})
-														
-									response_update_rule=$(curl -X PUT "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}" \
-										 -H "X-Auth-Email: ${auth_email}" \
-										 -H "X-Auth-Key: ${auth_key}" \
-										 -H "Content-Type: application/json" \
-										 --data '[{"id": "'${rule_id}'","action": "block","paused": false,"description": "Block Taiwan", "filter":{"id":"'${filter_id}'","expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}]')
+									
+									UpdateRuleResult=$(UpdateRule ${zoneid} ${rule_id} ${filter_id})
 
-									echo ${response_update_rule} | jq
+									echo ${UpdateRuleResult} | jq
 								fi
 														
 								
