@@ -90,7 +90,7 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 		#echo "rule response:"		 
 		#echo ${response_rule}
 		
-		if [[ ${arr[*]} == "pbit.vip" ]]; then
+		if [[ "${zonename}" == "pbit.vip" ]]; then
 			flag = "true"
 		fi
 		
