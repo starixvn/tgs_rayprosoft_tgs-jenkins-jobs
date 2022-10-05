@@ -32,7 +32,7 @@ DeleteFilters(){
 
 CreateRule(){
 	zone_id=$1
-	response_create_rule=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules" \
+	response_create_rule=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/firewall/rules" \
 		 -H "X-Auth-Email: ${auth_email}" \
 		 -H "X-Auth-Key: ${auth_key}" \
 		 -H "Content-Type: application/json" \
