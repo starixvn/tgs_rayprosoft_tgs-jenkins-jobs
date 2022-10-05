@@ -91,7 +91,8 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 		#echo ${response_rule}
 		
 		if [[ "${zonename}" == "pbit.vip" ]]; then
-			flag = "true"
+			flag="true"
+			echo "pbit.vip arrive"
 		fi
 		
 		if [[ $flag == "false" ]]; then
