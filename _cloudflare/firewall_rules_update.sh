@@ -76,7 +76,7 @@ declare -a arr=("mclub001.com");
 for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 	IFS=','
 	read -a zone_array <<< ${zone}
-	zoneid=${zone_array[0]/\"}
+	zoneid=${zone_array[0]/\"}:
 	zonename=${zone_array[1]/\"}
 	echo "${zonename}=${zoneid}"
 
@@ -117,16 +117,27 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 					echo "Executing"					
 					#UpdateRuleResult=$(UpdateRule ${zoneid} ${rule_id} ${filter_id})
 					
-					echo "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}"
+					#echo "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}"
 
-					echo '{"id": "'${rule_id}'","action": "block","paused": false,"description": "Block Taiwan", "filter":{"id":"'${filter_id}'","expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}' | jq
+					#echo '{"id": "'${rule_id}'","action": "block","paused": false,"description": "Block Ta#iwan", "filter":{"id":"'${filter_id}'","expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}' | jq
 
-					response_update_rule=$(curl -X PUT "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}" \
-						 -H "X-Auth-Email: ${auth_email}" \
-						 -H "X-Auth-Key: ${auth_key}" \
-						 -H "Content-Type: application/json" \
-						 --data '{"id": "'${rule_id}'","action": "block","paused": false,"description": "Block Taiwan", "filter":{"id":"'${filter_id}'","expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}')
-					echo ${response_update_rule} | jq
+					# response_update_rule=$(curl -X PUT "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}" \
+						 # -H "X-Auth-Email: ${auth_email}" \
+						 # -H "X-Auth-Key: ${auth_key}" \
+						 # -H "Content-Type: application/json" \
+						 # --data '{"id": "'${rule_id}'","action": "block","paused": false,"description": "Block Taiwan", "filter":{"id":"'${filter_id}'","expression": "(ip.geoip.country in {\"TW\"} and not ip.src in {'"${officeip}"'})","paused": false }}')
+					# echo ${response_update_rule}
+					
+					response_delete_rule=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id//\"/}" \
+					 -H "X-Auth-Email: ${auth_email}" \
+					 -H "X-Auth-Key: ${auth_key}" \
+					 -H "Content-Type: application/json")
+					echo "delete result:"
+					echo ${response_delete_rule}
+					
+					CreateRuleResult=$(CreateRule ${zoneid})
+			
+					echo ${CreateRuleResult} | jq		
 				fi
 											
 				#response_delete_rule=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id//\"/}" \
