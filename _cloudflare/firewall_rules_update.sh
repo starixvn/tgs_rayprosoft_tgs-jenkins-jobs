@@ -68,11 +68,8 @@ response=$(curl -X GET "https://api.cloudflare.com/client/v4/zones?per_page=1000
 #echo ${response} | jq '.result'
 
 declare -i index=0
-#declare -a arr=("atinbet.vip" "atinbet.club" "atinbet.app" "atinbet.net" "atinbet.org" "atingbet.com");
-declare -a arr=("mclub001.com");
+declare -a arr=("srvptt.com" "srvttt.com" "rpgp.cc" "yydsgo.xyz");
 
-
-# FOR PURGE
 for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 	IFS=','
 	read -a zone_array <<< ${zone}
@@ -81,7 +78,7 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 	zoneid="${zoneid/:/}"
 	echo "${zonename}=${zoneid}"
 
-	if [[ ${arr[*]} =~ "${zonename}" ]]; then
+	if [[ ! ${arr[*]} =~ "${zonename}" ]]; then
 		#DeleteFilters ${zoneid} ${zonename}
 	
 		echo "zoneid=${zoneid}"
@@ -139,7 +136,7 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 					
 					CreateRuleResult=$(CreateRule ${zoneid})
 			
-					echo ${CreateRuleResult} | jq		
+					echo ${CreateRuleResult}
 				fi
 											
 				#response_delete_rule=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id//\"/}" \
