@@ -89,23 +89,12 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 				 
 		#echo "rule response:"		 
 		#echo ${response_rule}
-		
-		if [[ "${zonename}" == "pbit.vip" ]]; then
-			flag="true"
-			echo "pbit.vip arrive"
-		fi
-		
-		if [[ $flag == "false" ]]; then
-		   continue;
-		fi
-		
+
 		IFS=''
 		rules=$(echo ${response_rule} | jq '.result' | jq '.[] .id')
 		if [ -z "$rules" ]; then
 			echo "$zonename 未設定"	
-
 			CreateRuleResult=$(CreateRule ${zoneid})
-			
 			echo ${CreateRuleResult} | jq
 		else
 			echo "$zonename 已設定"
@@ -123,7 +112,6 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 				
 				if [[ ${desc} == "Block Taiwan" ]]; then 
 					echo "Executing"				
-
 
 					#####Update 沒作用#####
 					#UpdateRuleResult=$(UpdateRule ${zoneid} ${rule_id} ${filter_id})
@@ -150,19 +138,7 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 			
 					echo ${CreateRuleResult}
 				fi
-											
-				#response_delete_rule=$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id//\"/}" \
-					# -H "X-Auth-Email: ${auth_email}" \
-					# -H "X-Auth-Key: ${auth_key}" \
-					# -H "Content-Type: application/json" \
-					 #--data '{}')
-				#echo "delete result:"
-				#echo ${response_delete_rule} | jq
 			done
-			
-			#CreateRuleResult=$(CreateRule ${zoneid})
-			
-			#echo ${CreateRuleResult} | jq
 		fi
 	fi
 done
