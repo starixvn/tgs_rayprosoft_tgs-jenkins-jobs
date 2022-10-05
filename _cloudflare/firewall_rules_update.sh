@@ -69,7 +69,7 @@ response=$(curl -X GET "https://api.cloudflare.com/client/v4/zones?per_page=1000
 
 declare -i index=0
 declare -a arr=("srvptt.com" "srvttt.com" "rpgp.cc" "yydsgo.xyz");
-
+flag="false"
 for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 	IFS=','
 	read -a zone_array <<< ${zone}
@@ -89,6 +89,14 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 				 
 		#echo "rule response:"		 
 		#echo ${response_rule}
+		
+		if [[ ${arr[*]} == "pbit.vip" ]]; then
+			flag = "true"
+		fi
+		
+		if [[ $flag == "false" ]]; then
+		   continue;
+		fi
 		
 		IFS=''
 		rules=$(echo ${response_rule} | jq '.result' | jq '.[] .id')
@@ -113,7 +121,10 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 				echo "filter_id=${filter_id}"
 				
 				if [[ ${desc} == "Block Taiwan" ]]; then 
-					echo "Executing"					
+					echo "Executing"				
+
+
+					#####Update 沒作用#####
 					#UpdateRuleResult=$(UpdateRule ${zoneid} ${rule_id} ${filter_id})
 					
 					#echo "https://api.cloudflare.com/client/v4/zones/${zoneid}/firewall/rules/${rule_id}"
