@@ -78,6 +78,7 @@ for zone in $(echo ${response} | jq '.result' | jq  '.[] | .id+","+.name'); do
 	read -a zone_array <<< ${zone}
 	zoneid=${zone_array[0]/\"}:
 	zonename=${zone_array[1]/\"}
+	zoneid="${zoneid/:/}"
 	echo "${zonename}=${zoneid}"
 
 	if [[ ${arr[*]} =~ "${zonename}" ]]; then
