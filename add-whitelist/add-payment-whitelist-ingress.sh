@@ -1,7 +1,8 @@
 #!/bin/bash
-kubectl -n prod get ing ingress-payment -o yaml > ingress-payment.yaml
+ingressfile="/var/lib/jenkins/ingress-payment.yaml"
+kubectl -n prod get ing ingress-payment -o yaml > $ingressfile
 ip=$1
-grep -n  "deny all;" ingress-payment.yaml | while read -r KeyLines;do  ## using tac to change sort order
+grep -n  "deny all;" $ingressfile | while read -r KeyLines;do  ## using tac to change sort order
         echo "line=$KeyLines"
         res=$(echo "${KeyLines/:      deny all;/}")
         insertLine=$(expr $res)
@@ -12,7 +13,7 @@ grep -n  "deny all;" ingress-payment.yaml | while read -r KeyLines;do  ## using 
         then
             echo "insertLine2=${insertLine}"
             sed -i "${insertLine} i\
-\ \ \ \ \ \ allow $ip/32;" ingress-payment.yaml
-			kubectl apply -f ingress-payment.yaml
+\ \ \ \ \ \ allow $ip/32;" $ingressfile
+            kubectl apply -f $ingressfile
         fi
 done
