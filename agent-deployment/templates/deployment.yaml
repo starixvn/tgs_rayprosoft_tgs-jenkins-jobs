@@ -37,12 +37,12 @@ spec:
       {{- end }}
       {{- if eq .Values.namespace "prod" }}
       nodeSelector:
-        dedicated: prod
+        dedicated: frontend
       tolerations:
       - effect: NoSchedule
         key: dedicated
         operator: Equal
-        value: prod
+        value: frontend
       {{- end }}
       containers:
         - name: {{ .Values.lobbyName }}

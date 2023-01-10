@@ -12,6 +12,7 @@ image:
 
 imagePullSecrets:
   - name: registry-credentials
+  - name: dockerhub
 
 podAnnotations: {}
 
@@ -43,8 +44,8 @@ resources:
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   limits:
-    cpu: 150m
-    memory: 300Mi
+    cpu: 50m
+    memory: 100Mi
   requests:
-    cpu: 150m
-    memory: 300Mi
+    cpu: 20m
+    memory: 30Mi
