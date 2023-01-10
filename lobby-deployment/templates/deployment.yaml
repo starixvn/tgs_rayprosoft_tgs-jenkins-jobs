@@ -95,6 +95,26 @@ spec:
           - name: "WAPTEMPLATE"
             value: "8"
           {{- end }}
+          {{- if eq .Values.lobbyTemplate "t10" }}
+          - name: "WAPTEMPLATE"
+            value: "10"
+          - name: THEME
+            value: wapT10
+          {{- end }}
+          {{- if eq .Values.lobbyTemplate "t11" }}
+          - name: "WAPTEMPLATE"
+            value: "11"
+          - name: THEME
+            value: wapT11
+          {{- end }}
+          {{- if eq .Values.lobbyTemplate "t13" }}
+          - name: "WAPTEMPLATE"
+            value: "13"
+          - name: THEME
+            value: wapT13
+          - name: ACCOUNT_TEMPLATE
+            value: "13"
+          {{- end }}
           ports:
             - name: http
               containerPort: 80
