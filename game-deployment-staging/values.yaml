@@ -5,13 +5,13 @@
 replicaCount: 1
 
 image:
-  repository: registry.gitlab.com/rayprosoft/turnkey-gaming-system/tgs-api
+  repository: pgtgs/tgs-api
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
 imagePullSecrets:
-  - name: registry-credentials
+  - name: dockerhub
 
 podAnnotations: {}
 
