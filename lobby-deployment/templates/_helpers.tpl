@@ -35,6 +35,7 @@ Common labels
 */}}
 {{- define "lobby.labels" -}}
 {{ include "lobby.selectorLabels" . }}
+type: frontend
 {{- end }}
 
 {{/*
