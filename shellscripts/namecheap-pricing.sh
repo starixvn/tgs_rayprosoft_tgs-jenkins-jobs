@@ -77,7 +77,7 @@ if [[ "$count" != "0" ]]; then
 [Get Domain Price]
  domain: $DomainName
 $regular_price
-$price
+ Promotion$price
 EOT
 
 else
